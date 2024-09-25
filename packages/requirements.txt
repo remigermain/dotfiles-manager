@@ -1,0 +1,17 @@
+regex
+requests
+httpx
+Xlib
+pip-review
+build
+twine
+bpython
+docker
+
+pytest
+pytest-cov
+
+ytmdl
+spotdl
+
+smassh
