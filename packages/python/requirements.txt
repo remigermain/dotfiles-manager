@@ -188,7 +188,7 @@ SecretStorage==3.3.3
 selinux @ file:///builddir/build/BUILD/libselinux-3.6/src
 sepolicy @ file:///builddir/build/BUILD/selinux-3.6/python/sepolicy
 setools==4.5.1
-setuptools==69.2.0
+setuptools==70.0.0
 simber==0.2.6
 simpleaudio==1.0.4
 simpleline==1.9.0
