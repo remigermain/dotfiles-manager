@@ -1,60 +1,45 @@
 import abc
+import argparse
+import inspect
 import sys
-from pathlib import Path
 
-from .extras import ALL
-
-
-class Extras:
-    def __init__(self, logger, *extras):
-        self._dtc = {}
-        for extra in extras:
-            el = extra(logger, self)
-            self._dtc[el.name] = el
-            setattr(self, el.name, el)
-
-    def __iter__(self):
-        return iter(self._dtc.items())
+from utils.logger import Logger, Style
 
 
-class CommandAbstract(abc.ABC):
-    description = None
+class CommandAbstract(metaclass=abc.ABCMeta):
+    help = None
 
-    def __init__(self, logger, exec_command):
-        self.logger = logger
-        self.extras = Extras(self.logger, *ALL)
-        for name, el in self.extras:
-            setattr(self, name, el)
+    def __init__(self):
+        self.stdout = Logger(sys.stdout)
+        self.stderr = Logger(sys.stderr)
+        self.style = Style()
 
         if not hasattr(self, "name"):
             self.name = type(self).__name__.lower()
 
-        if not hasattr(self, "directory"):
-            self.directory = self.name
+    def add_arguments(self, parser: argparse.ArgumentParser):
+        return parser
 
-        if self.directory is not None:
-            self.directory = Path(self.directory)
-        self.exec_command = exec_command
+    @abc.abstractmethod
+    def handle(self, config, *ar, **options):
+        raise NotImplementedError("You need to implement handle()")
 
-    def pre_run(self, config, base, flags):
-        if self.directory is not None:
-            base = base / self.directory
-            base.mkdir(exist_ok=True, parents=True)
 
-        return config, base, flags
-
+class SubCommandAbstract(CommandAbstract):
     def add_arguments(self, parser):
-        pass
+        # get only modules defined
+        def predicate(symbol):
+            if not inspect.isclass(symbol) or not issubclass(symbol, CommandAbstract) or symbol is type(self):
+                return False
+            return True
 
-    def errx(self, *ar, **kw):
-        print(*ar, **kw, file=sys.stderr)
-        exit(1)
+        subparsers = parser.add_subparsers(description="Available commands", dest=f"{self.name}_command", required=True)
+        self.__corespond = {}
+        for _, subcmd in inspect.getmembers(self, predicate=predicate):
+            subcmd_cls = subcmd()
+            self.__corespond[subcmd_cls.name] = subcmd_cls
+            command_parser = subparsers.add_parser(subcmd_cls.name, help=subcmd_cls.help)
+            subcmd_cls.add_arguments(command_parser)
 
-    def run(self, config, base, flags):
-        raise NotImplementedError("need to implements 'run' method")
-
-    def sanitize_path(self, path):
-        return Path(str(path).replace(str(Path.home()), "~"))
-
-    def final_path(self, path):
-        return Path(path).expanduser()
+    def handle(self, **option):
+        return self.__corespond[option[f"{self.name}_command"]].handle(**option)

@@ -1,0 +1,8 @@
+{
+    "profile": "base",
+    "profiles": {
+        "base": {
+            "directory": "/home/remi/workspaces/lib/python/dotfiles-manager/tests/data.json"
+        }
+    }
+}
