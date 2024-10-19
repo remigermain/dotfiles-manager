@@ -1,9 +1,9 @@
 {
     "data": "./data",
-    "link": [
-        [
-            "home/__dotfiles__/.dotfilerc.json",
-            "/home/remi/.dotfilerc.json"
-        ]
-    ]
+    "link": {
+        "files": {
+            "content": [],
+            "tags": {}
+        }
+    }
 }

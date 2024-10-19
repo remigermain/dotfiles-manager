@@ -74,11 +74,20 @@ def get_config(config, base_path):
     return config_content, base_path
 
 
+def parse_tags(lst):
+    obj = {}
+    for value in lst or []:
+        k, value = value.split("=")
+        obj[k] = value
+    return obj
+
+
 def main(arguments, _sub="sub") -> Optional[int]:
     parser = argparse.ArgumentParser("dotfiles manager")
 
     parser.add_argument("-c", "--config", default=None, help="Select config files")
     parser.add_argument("--base-path", default=None, help="Base path where files are stocked.")
+    parser.add_argument("--tags", nargs="?", help="add tags to acitons")
 
     subparsers = parser.add_subparsers(description="Available commands", dest="command", required=True)
 
@@ -92,6 +101,7 @@ def main(arguments, _sub="sub") -> Optional[int]:
         command_cls.add_arguments(command_parser)
 
     options = vars(parser.parse_args(arguments))
+    options["tags"] = parse_tags(options.get("tags", []))
 
     try:
         return corespond[options["command"]].handle(**options)

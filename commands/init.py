@@ -18,9 +18,10 @@ class CommandInit(CommandAbstract):
         config = DotfileRC()
         directory = directory.expanduser().resolve()
         if profile in config["profiles"]:
-            res = self.stdout.input(f"profiles {profile!r} already exists, continue?[y-n]\n").lower()
+            res = self.stdout.input(f"profiles {profile!r} already exists, continue?[y-n]").lower()
             if res != "y":
                 return
 
         config["profiles"][profile] = {"directory": str(directory)}
+        self.stdout.write(f"profil {profile!r} linked to {directory}")
         config.save()

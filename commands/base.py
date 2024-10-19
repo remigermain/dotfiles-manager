@@ -3,19 +3,20 @@ import argparse
 import inspect
 import sys
 
+from utils.conf import ConfigScope
 from utils.logger import Logger, Style
 
 
 class CommandAbstract(metaclass=abc.ABCMeta):
     help = None
 
-    def __init__(self):
+    def __init__(self, config=None):
+        if not hasattr(self, "name"):
+            self.name = type(self).__name__.lower()
+
         self.stdout = Logger(sys.stdout)
         self.stderr = Logger(sys.stderr)
         self.style = Style()
-
-        if not hasattr(self, "name"):
-            self.name = type(self).__name__.lower()
 
     def add_arguments(self, parser: argparse.ArgumentParser):
         return parser

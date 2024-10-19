@@ -4,6 +4,7 @@ import os
 import shutil
 from pathlib import Path
 
+from .encoder import JsonEncoder
 from .expection import ConfigError
 
 
@@ -13,7 +14,7 @@ class DictSave(dict):
         super().__init__(data)
 
     def save(self):
-        self._path.write_text(json.dumps(self, indent=4))
+        self._path.write_text(json.dumps(self, indent=4, cls=JsonEncoder))
 
 
 class Copp:
@@ -61,9 +62,9 @@ class DotfileData(DictSave):
             data = json.loads(path.read_text())
         super().__init__(path, data)
 
-    @contextlib.contextmanager
-    def files(self, prefix):
-        yield Copp(Path(self._path.parent) / Path(self["data"]), prefix)
+    @property
+    def path_data(self):
+        return (Path(self._path.parent) / Path(self["data"])).expanduser()
 
 
 class DotfileRC(DictSave):
