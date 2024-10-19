@@ -1,3 +1,4 @@
+import hashlib
 import os
 import shutil
 from functools import wraps
@@ -19,9 +20,19 @@ class FsScope:
 
     def _sanitize_path(self, path):
         path = Path(path).expanduser()
-        if str(path).startswith(USER):
-            return "user" / Path(str(path).removeprefix(USER)), True
-        return "system" / path, False
+        if not self.is_system_path(path):
+            path = Path(str(path).removeprefix(USER))
+            prefix = "user"
+            is_user = True
+        else:
+            prefix = "system"
+            is_user = False
+
+        path = Path(str(path).removeprefix("/"))
+        return prefix / path, is_user
+
+    def is_system_path(self, path):
+        return not str(Path(path).expanduser()).startswith(USER)
 
     @wraps(Path.open)
     def open(self, filename, *ar, **kw):
@@ -30,7 +41,10 @@ class FsScope:
     @wraps(shutil.copy2)
     def copy(self, source, dest):
         self.remove(dest)
-        return shutil.copy2(source, dest, follow_symlinks=False)
+        if source.is_dir():
+            return shutil.copytree(source, dest)
+        else:
+            return shutil.copy2(source, dest, follow_symlinks=False)
 
     def link(self, source, dest):
         source = Path(self.base / source)
@@ -43,11 +57,11 @@ class FsScope:
         dest.symlink_to(source)
         return True
 
-    def remove(self, source):
+    def remove(self, source: Path):
         """source is host"""
         source = Path(source).expanduser()
         if source.exists():
-            if source.is_dir():
+            if source.is_dir() and not source.is_symlink():
                 shutil.rmtree(source)
             else:
                 source.unlink()
@@ -57,6 +71,16 @@ class FsScope:
     @wraps(Path.exists)
     def exist(self, source):
         return Path(source).exists()
+
+    def stat(self, source):
+        return Path(source).stat()
+
+    def md5sum(self, source):
+        h = hashlib.new("md5")
+        with open(source, "rb") as f:
+            for chunk in iter(lambda: f.read(128 * h.block_size), b""):
+                h.update(chunk)
+        return h.hexdigest()
 
     # --- local ---
 
@@ -75,6 +99,9 @@ class FsScope:
     def llink(self, source, dest):
         """dest is host destination"""
         return self.link(self.base / source, dest)
+
+    def lstat(self, source):
+        return Path(self.base / source).stat()
 
     def save(self, source):
         """source is host file"""
@@ -96,6 +123,9 @@ class FsScope:
         path, _ = self._sanitize_path(source)
         return self.exist(self.base / path)
 
+    def lmd5sum(self, source):
+        return self.md5sum(self.base / source)
+
 
 class ConfigScope:
     def __init__(self, name, config):
@@ -109,35 +139,18 @@ class ConfigScope:
         if key not in self._local_config:
             if default is NOSET:
                 return KeyError(key)
-            return self.set(key, default)
+            return default
 
-        return self._local_config[key]["content"]
+        return self._local_config[key]
 
     def set(self, key, content, **tags):
-        item = self._local_config.setdefault(key, {})
-        item["content"] = content
-        item["tags"] = tags
-        return item["content"]
+        self._local_config[key] = content
+        self.save()
 
     def add(self, key, content, **tags):
         item = self._local_config.setdefault(key, [])
-        item["content"].append({"content": content, "tags": tags})
-
-    def _match(self, ctags, ntags):
-        return ctags.items() == ntags.items()
-
-    def filter(self, key, **tags):
-        content = self.get(key)
-        if isinstance(content, dict):
-            if self._match(content["tags"], tags):
-                return content["content"]
-            return
-
-        for value in content:
-            if self._match(value["tags"], tags):
-                return value["content"]
-
-        return
+        item.append(content)
+        self.save()
 
     def save(self):
         self._config.save()

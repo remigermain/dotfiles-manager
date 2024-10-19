@@ -7,6 +7,8 @@ from pathlib import Path
 from .encoder import JsonEncoder
 from .expection import ConfigError
 
+DOTFILE_RC = "/etc/.dotfilerc.json"
+
 
 class DictSave(dict):
     def __init__(self, path, data):
@@ -69,7 +71,7 @@ class DotfileData(DictSave):
 
 class DotfileRC(DictSave):
     def __init__(self):
-        path = Path("~/.dotfilerc.json").expanduser()
+        path = Path(DOTFILE_RC).expanduser()
         data = {"profile": "base", "profiles": {}}
         if path.exists():
             data = json.loads(path.read_text())

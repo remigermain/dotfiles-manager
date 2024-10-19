@@ -2,43 +2,34 @@ import argparse
 from pathlib import Path
 
 from utils.conf import ConfigScope
-from utils.utils import is_root
 
 from .base import CommandAbstract, SubCommandAbstract
 
 
-class CommandLink(SubCommandAbstract):
-    help = "synlik file"
-    aliases = ("ln",)
+class CommandCopy(SubCommandAbstract):
+    help = "copy file"
+    aliases = ("cp",)
 
     class Add(CommandAbstract):
-        help = "add link file"
+        help = "add file"
 
         def add_arguments(self, parser: argparse.ArgumentParser):
-            parser.add_argument("source", type=Path, help="file needed to link")
+            parser.add_argument("source", type=Path, help="file needed to copy")
 
         def handle(self, source, tags, **option):
-            config = ConfigScope.from_name(CommandLink.name)
+            config = ConfigScope.from_name(CommandCopy.name)
             for actual, _ in config.get("files", []):
                 actual = Path(actual)
                 if actual == source:
                     self.stdout.write("file already exists...")
                     return
 
-            if config.fs.is_system_path(source):
-                if not self.stdout.warning.accept("symlink a file to your system can be break it?"):
-                    return
-                if not is_root():
-                    self.stdout.error("You are not root..")
-                    return
-
             dest, is_user = config.fs.save(source)
             config.add("files", (source, dest), **tags)
-            config.fs.llink(source, dest)
-            self.stdout.write("linked ", self.style.info(dest))
+            self.stdout.write("copied ", self.style.info(source))
 
     class Remove(CommandAbstract):
-        help = "remove link file"
+        help = "remove file"
         aliases = ("rm",)
 
         def add_arguments(self, parser: argparse.ArgumentParser):
@@ -46,7 +37,7 @@ class CommandLink(SubCommandAbstract):
             parser.add_argument("--no-remove", action="store_true", default=False, help="remove files")
 
         def handle(self, source, no_remove, **option):
-            config = ConfigScope.from_name(CommandLink.name)
+            config = ConfigScope.from_name(CommandCopy.name)
             files = config.get("files", [])
             for element in files:
                 actual = Path(element[0])
@@ -60,31 +51,40 @@ class CommandLink(SubCommandAbstract):
             source, dest = element
             files = files[:idx] + files[idx + 1 :]
 
-            config.fs.lcopy(dest, source)
             if not no_remove:
                 config.fs.lremove(dest)
+            self.stdout.write("file removed...")
             config.set("files", files)
 
     class List(CommandAbstract):
-        help = "list link files"
+        help = "list files"
         aliases = ("ls",)
 
         def handle(self, **option):
-            config = ConfigScope.from_name(CommandLink.name)
+            config = ConfigScope.from_name(CommandCopy.name)
             files = config.get("files", [])
             for source, dest in files:
                 dest = config.fs.lpath(dest)
                 self.stdout.write(source, self.style.info(self.style.bold(" -> ")), str(dest))
 
     class Update(CommandAbstract):
-        help = "update link files"
+        help = "update files"
         aliases = ("up",)
 
         def handle(self, **option):
-            config = ConfigScope.from_name(CommandLink.name)
+            config = ConfigScope.from_name(CommandCopy.name)
             files = config.get("files", [])
             for dest, source in files:
-                if config.fs.llink(source, dest):
-                    self.stdout.write("linked ", self.style.info(dest))
+                is_same = config.fs.md5sum(dest) == config.fs.lmd5sum(source)
+                if is_same:
+                    self.stdout.write("already copied ", self.style.info(dest))
+                    continue
+
+                stat_dest = config.fs.stat(dest)
+                stat_source = config.fs.lstat(source)
+                if stat_dest.st_mtime > stat_source.st_mtime:
+                    config.fs.save(dest)
+                    self.stdout.write("copied from system ", self.style.info(dest))
                 else:
-                    self.stdout.write("already linked ", self.style.info(dest))
+                    config.fs.lcopy(source, dest)
+                    self.stdout.write("copied from local ", self.style.info(dest))

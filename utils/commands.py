@@ -7,12 +7,18 @@ from commands.base import CommandAbstract, SubCommandAbstract
 BASE = Path(__file__).parent.parent
 
 
-def list_commands():
-    for path in BASE.glob("commands/*.py"):
-        basename = path.name
-        dirname = path.parent.name
-        module_name = f"{dirname}.{basename.split(".")[0]}"
+def generate_path(path):
+    module = [path.name.split(".")[0]]
+    path = path.parent
+    while BASE != path:
+        module.insert(0, path.name)
+        path = path.parent
+    return ".".join(module)
 
+
+def list_commands():
+    for path in BASE.glob("commands/**/*.py"):
+        module_name = generate_path(path)
         # import modules from basename
         module = importlib.import_module(module_name)
 

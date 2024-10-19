@@ -95,16 +95,19 @@ def main(arguments, _sub="sub") -> Optional[int]:
 
     for command in list_commands():
         command_cls = command()
-        corespond[command_cls.name] = command_cls
-        command_parser = subparsers.add_parser(command_cls.name, help=command_cls.help)
-
+        command_parser = subparsers.add_parser(command_cls.name, aliases=command_cls.aliases, help=command_cls.help)
+        corespond[command_cls.name] = command_cls, command_parser
         command_cls.add_arguments(command_parser)
 
     options = vars(parser.parse_args(arguments))
     options["tags"] = parse_tags(options.get("tags", []))
+    options["parser"] = parser
+    options["list_commands"] = corespond
+
+    command, _ = corespond[options["command"]]
 
     try:
-        return corespond[options["command"]].handle(**options)
+        return command.handle(**options)
     except KeyboardInterrupt:
         return 100
     except ConfigError as e:

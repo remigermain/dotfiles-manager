@@ -24,4 +24,3 @@ class CommandInit(CommandAbstract):
 
         config["profiles"][profile] = {"directory": str(directory)}
         self.stdout.write(f"profil {profile!r} linked to {directory}")
-        config.save()

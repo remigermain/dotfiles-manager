@@ -3,17 +3,21 @@ import argparse
 import inspect
 import sys
 
-from utils.conf import ConfigScope
 from utils.logger import Logger, Style
 
 
-class CommandAbstract(metaclass=abc.ABCMeta):
+class CommandType(abc.ABCMeta):
+    def __new__(cls, name, base, namespace):
+        if "name" not in namespace:
+            namespace["name"] = name.lower().removeprefix("command")
+        return super().__new__(cls, name, base, namespace)
+
+
+class CommandAbstract(metaclass=CommandType):
     help = None
+    aliases = ()
 
     def __init__(self, config=None):
-        if not hasattr(self, "name"):
-            self.name = type(self).__name__.lower()
-
         self.stdout = Logger(sys.stdout)
         self.stderr = Logger(sys.stderr)
         self.style = Style()
@@ -39,7 +43,7 @@ class SubCommandAbstract(CommandAbstract):
         for _, subcmd in inspect.getmembers(self, predicate=predicate):
             subcmd_cls = subcmd()
             self.__corespond[subcmd_cls.name] = subcmd_cls
-            command_parser = subparsers.add_parser(subcmd_cls.name, help=subcmd_cls.help)
+            command_parser = subparsers.add_parser(subcmd_cls.name, aliases=subcmd_cls.aliases, help=subcmd_cls.help)
             subcmd_cls.add_arguments(command_parser)
 
     def handle(self, **option):
