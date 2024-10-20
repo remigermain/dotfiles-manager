@@ -234,6 +234,10 @@ class DotConfigRc(dict, metaclass=Singleton):
         super().__init__(data)
         self.fs = FsScope("", "")
 
+    @property
+    def path(self):
+        return self._path
+
     def save(self):
         with NamedTemporaryFile() as f:
             f.write(json.dumps(self, indent=4, cls=JsonEncoder).encode())

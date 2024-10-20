@@ -1,4 +1,6 @@
 import argparse
+import os
+import subprocess
 from pathlib import Path
 
 from .base import CommandAbstract
@@ -15,9 +17,13 @@ class CommandInit(CommandAbstract):
     def handle(self, directory: Path, profile, **options):
         directory = directory.expanduser().resolve()
         if profile in self.rc["profiles"]:
-            res = self.stdout.input(f"profiles {profile!r} already exists, continue?[y-n]").lower()
+            res = self.stdout.info.input(f"profiles {profile!r} already exists, continue?[y-n]").lower()
             if res != "y":
                 return
 
         self.rc["profiles"][profile] = {"directory": str(directory)}
         self.stdout.write(f"profil {profile!r} linked to {directory}")
+
+        # TODO create group
+        subprocess.run(["sudo", "chmod", "770", self.rc.path])
+        subprocess.run(["sudo", "chown", os.getenv("USER"), self.rc.path])
