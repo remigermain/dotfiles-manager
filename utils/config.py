@@ -11,15 +11,8 @@ from .encoder import JsonEncoder
 from .expection import ConfigError
 from .singleton import Singleton
 
-DOTFILE_RC = "/etc/.dotfilerc.json"
-
+DOTFILE_RC = Path("~/.dotfilerc").expanduser()
 USER = os.getenv("HOME") + "/"
-
-
-class NotSet: ...
-
-
-NOSET = NotSet()
 
 
 def run(cmds):
@@ -35,6 +28,7 @@ def run(cmds):
         if res.returncode == 0:
             return
         err = res.stderr.decode()
+
     raise ValueError(err)
 
 
@@ -63,6 +57,10 @@ class FsScope:
     def open(self, filename, *ar, **kw):
         return Path(filename).open(*ar, **kw)
 
+    def chmod(self, source, mod):
+        # Path(source).chmod(mod)
+        run(["chmod", oct(mod).replace("0o", ""), str(source)])
+
     @wraps(shutil.copy2)
     def copy(self, source, dest):
         source = Path(source)
@@ -77,7 +75,7 @@ class FsScope:
             # return shutil.copy2(source, dest, follow_symlinks=False)
 
     def link(self, source, dest):
-        source = Path(self.lpath(source))
+        source = Path(source).expanduser()
         dest = Path(dest).expanduser()
 
         if dest.resolve() == source:
@@ -119,12 +117,15 @@ class FsScope:
         # Path(path).mkdir(exist_ok=True, parents=True)
 
     # --- local ---
+    def lbase(self, path):
+        return Path(self.base / path)
+
     def ldata(self, path):
         return Path(Path(self.name) / path)
 
     def lpath(self, path) -> Path:
         """convert path to local dotfile path"""
-        return Path(self.base / self.ldata(path))
+        return self.lbase(self.ldata(path))
 
     @wraps(Path.open)
     def lopen(self, filename, *ar, **kw):
@@ -176,19 +177,19 @@ class ConfigScope:
         self._base = config.path
         self.fs = FsScope(self._base, self.name)
 
-    def get(self, key, default=NOSET):
+    def get(self, key, *ar):
         if key not in self._local_config:
-            if default is NOSET:
+            if not ar:
                 return KeyError(key)
-            return default
+            return ar[0]
 
         return self._local_config[key]
 
-    def set(self, key, content, **tags):
+    def set(self, key, content):
         self._local_config[key] = content
         self.save()
 
-    def add(self, key, content, **tags):
+    def add(self, key, content):
         item = self._local_config.setdefault(key, [])
         item.append(content)
         self.save()
@@ -227,7 +228,7 @@ class Config(dict):
 
 class DotConfigRc(dict, metaclass=Singleton):
     def __init__(self):
-        self._path = Path(DOTFILE_RC).expanduser()
+        self._path = DOTFILE_RC
         data = {"profile": "base", "profiles": {}}
         if self._path.exists():
             data = json.loads(self._path.read_text())

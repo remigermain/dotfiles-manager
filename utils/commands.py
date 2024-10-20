@@ -2,7 +2,7 @@ import argparse
 import importlib
 import inspect
 from pathlib import Path
-from typing import ForwardRef, Type, Union
+from typing import ForwardRef, Union
 
 BASE = Path(__file__).parent.parent
 

@@ -1,6 +1,5 @@
 import ast
 import hashlib
-import os
 
 
 def md5sum(filename):
@@ -9,10 +8,6 @@ def md5sum(filename):
         for chunk in iter(lambda: f.read(128 * h.block_size), b""):
             h.update(chunk)
     return h.hexdigest()
-
-
-def is_root():
-    return os.geteuid() == 0
 
 
 def cast(value):
@@ -24,5 +19,4 @@ def cast(value):
 
 def remove_list(element, lst):
     idx = lst.index(element)
-    source, dest = element
     return lst[:idx] + lst[idx + 1 :]

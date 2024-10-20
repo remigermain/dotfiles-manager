@@ -10,9 +10,10 @@ class CommandGnome(SubCommandAbstract):
         help = "backup all installed packages"
 
         def handle(self, **option):
+            self.stdout.write("backup gnome extension apps...")
             res = subprocess.run(["gext", "list", "--only-uuid"], capture_output=True)
             if not res:
-                self.stderr.error("Invalid response from gnome_extention_cli")
+                return self.stderr.error("invalid response from gnome_extension_cli")
 
             packages = [e.strip() for e in res.stdout.decode().strip().split("\n")]
 
@@ -22,8 +23,11 @@ class CommandGnome(SubCommandAbstract):
         help = "update all installed packages"
 
         def handle(self, **option):
+            self.stdout.write("update gnome extension apps...")
             pkgs = self.config.get("packages", [])
-            if pkgs:
-                res = subprocess.run(["gext", "install", *pkgs])
-                if not res:
-                    self.stderr.error("Invalid response from gnome_extention_cli")
+            if not pkgs:
+                return
+
+            res = subprocess.run(["gext", "install", *pkgs])
+            if not res:
+                return self.stderr.error("invalid response from gnome_extension_cli")

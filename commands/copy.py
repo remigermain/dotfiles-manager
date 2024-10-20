@@ -1,6 +1,8 @@
 import argparse
 from pathlib import Path
 
+from utils.utils import remove_list
+
 from .base import CommandAbstract, SubCommandAbstract
 
 
@@ -43,13 +45,12 @@ class CommandCopy(SubCommandAbstract):
                 self.stdout.write("file not found...")
                 return
 
-            idx = files.index(element)
             source, dest = element
-            files = files[:idx] + files[idx + 1 :]
+            files = remove_list(element, files)
 
             if not no_remove:
                 self.config.fs.lremove(dest)
-            self.stdout.write("file removed...")
+            self.stdout.write("file ", self.style.info(dest), "removed...")
             self.config.set("files", files)
 
     class List(CommandAbstract):

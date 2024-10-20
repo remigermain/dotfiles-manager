@@ -1,27 +1,9 @@
 import argparse
+import subprocess
 from fnmatch import fnmatch
 from pathlib import Path
 
 from .base import CommandAbstract, SubCommandAbstract
-
-
-def globscript(path, scripts_name=None, match=False):
-    scripts = list(path.glob("*.sh"))
-
-    if not scripts_name:
-        return scripts
-
-    results = []
-    for script in scripts:
-        name = script.with_suffix("").name
-        if match:
-            for sub in scripts_name:
-                if fnmatch(name, f"*{sub}*"):
-                    results.append(script)
-        elif name in scripts_name:
-            results.append(script)
-
-    return list(set(results))
 
 
 class CommandScript(SubCommandAbstract):
@@ -31,7 +13,7 @@ class CommandScript(SubCommandAbstract):
         help = "run script by command"
 
         def add_arguments(self, parser: argparse.ArgumentParser):
-            choices = self.config.get("commands", [])
+            choices = self.config.get("commands", {}).keys()
             parser.add_argument("script-command", help="name to run script command", choices=choices)
 
             parser.add_argument("scripts-name", nargs="*", help="run only name script specified (default to all)")
@@ -41,23 +23,44 @@ class CommandScript(SubCommandAbstract):
             script_command = options["script-command"]
             scripts_name = options["scripts-name"]
 
-            scripts = globscript(self.config.fs.lpath(script_command), scripts_name, match)
+            commands = self.config.get("commands", {})
+            scripts = commands.get(script_command, [])
             if not scripts:
                 self.stdout.info("no script to run...")
                 return
 
+            self.stdout.write(f"[{self.style.info(script_command)}]")
+            for script in self.matchs(scripts, scripts_name, match):
+                script = self.config.fs.lpath(Path(script_command) / script)
+                self.stdout.write("run ", self.style.info(script.name))
+                try:
+                    subprocess.run([str(script)], check=True)
+                except Exception as e:
+                    self.stdout.error(f" {e}")
+
+        def matchs(self, scripts, pattern, match):
+            if not pattern:
+                return scripts
+
+            filterd = set()
             for script in scripts:
-                self.stdout.write(f"run {script_command} {self.style.info(script.name)}")
+                for pat in pattern:
+                    pat = f"*{pat}*" if match else pat
+                    if fnmatch(script, pat):
+                        filterd.add(script)
+
+            return filterd
 
     class List(CommandAbstract):
         help = "list all installed scripts"
 
         def handle(self, **options):
-            commands = self.config.get("commands", [])
+            commands = self.config.get("commands", {})
 
-            for choice in commands:
-                for script in globscript(self.config.fs.lpath(choice)):
-                    self.stdout.info(f"[{choice}] {script}")
+            for command, scripts in commands.items():
+                self.stdout.write(f"[{self.style.info(command)}]")
+                for script in scripts:
+                    self.stdout.write(" - ", self.style.info(script))
 
     class Add(CommandAbstract):
         help = "add script for command"
@@ -69,8 +72,22 @@ class CommandScript(SubCommandAbstract):
         def handle(self, scripts, **options):
             script_command = options["script-command"]
 
-            dest = self.config.fs.lpath(script_command)
+            commands = self.config.get("commands", {})
+            list_scripts = commands.setdefault(script_command, [])
+
+            self.stdout.write(f"[{self.style.info(script_command)}]")
             for script in scripts:
-                source = Path(script).expanduser().resolve()
-                self.config.fs.copy(source, dest / source.name)
-                self.stdout.info(f"add command Script {script_command} -> {source}")
+                script = Path(script).expanduser().resolve()
+
+                if script.name in list_scripts:
+                    if not self.stdout.warning.accept("a script with the same name exists, replace it ?"):
+                        continue
+
+                dest = self.config.fs.lpath(Path(script_command) / script.name)
+                self.config.fs.copy(script, dest)
+                self.config.fs.chmod(dest, 0o774)
+                self.stdout.write("add ", self.style.info(script.name))
+                list_scripts.append(script.name)
+
+            commands[script_command] = set(list_scripts)
+            self.config.set("commands", commands)

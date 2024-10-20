@@ -17,8 +17,7 @@ class CommandInit(CommandAbstract):
     def handle(self, directory: Path, profile, **options):
         directory = directory.expanduser().resolve()
         if profile in self.rc["profiles"]:
-            res = self.stdout.info.input(f"profiles {profile!r} already exists, continue?[y-n]").lower()
-            if res != "y":
+            if not self.stdout.write.accept("profiles", self.style.info(repr(profile)), " already exists, continue?"):
                 return
 
         self.rc["profiles"][profile] = {"directory": str(directory)}

@@ -10,9 +10,10 @@ class CommandFlatpak(SubCommandAbstract):
         help = "backup all installed packages"
 
         def handle(self, **option):
+            self.stdout.write("backup flatpak apps...")
             res = subprocess.run(["flatpak", "list", "--app", "--columns=application"], capture_output=True)
             if not res:
-                self.stderr.error("Invalid response from flatpak")
+                return self.stderr.error("invalid response from flatpak")
 
             packages = [e.strip() for e in res.stdout.decode().strip().split("\n")]
 
@@ -25,7 +26,8 @@ class CommandFlatpak(SubCommandAbstract):
             parser.add_argument("-y", "--assumeyes", help="Automatically answer yes for all questions")
 
         def handle(self, **option):
+            self.stdout.write("update flatpak apps...")
             pkgs = self.config.get("packages", [])
             res = subprocess.run(["flatpak", "install", "--or-update", *pkgs])
             if not res:
-                self.stderr.error("Invalid response from flatpak")
+                return self.stderr.error("invalid response from flatpak")

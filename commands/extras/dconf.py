@@ -11,15 +11,15 @@ class CommandDconf(SubCommandAbstract):
     help = "dconf integration"
 
     class Backup(CommandAbstract):
-        help = "backup all dconf"
+        help = "backup dconf"
 
         def handle(self, **option):
+            self.stdout.write("backup dconf settings...")
             res = subprocess.run(["dconf", "dump", "/"], capture_output=True)
             if not res:
-                self.stderr.error("Invalid response from  dconf")
+                return self.stderr.error("invalid response from dconf")
 
             dconf = self._sanitize(self.config, res.stdout.decode())
-            self.stdout.info("dconf backup...")
             self.config.set("data", dconf)
 
         def _sanitize(self, config, dconf):
@@ -54,7 +54,7 @@ class CommandDconf(SubCommandAbstract):
             return output.read()
 
     class Ignore(CommandAbstract):
-        help = "ignore"
+        help = "ignore sections"
 
         def add_arguments(self, parser):
             parser.add_argument("sections", nargs="+", help="ignore sections")
@@ -64,7 +64,7 @@ class CommandDconf(SubCommandAbstract):
             self.config.set("ingore-sections", list(sections))
 
     class IgnoreKey(CommandAbstract):
-        help = "ignorekey"
+        help = "ignore sections keys"
 
         def add_arguments(self, parser):
             parser.add_argument("section", help="ignore sections")
@@ -89,27 +89,29 @@ class CommandDconf(SubCommandAbstract):
                     k, v = element
                     if k == section and v == key:
                         self.config.set("ignore-keys", remove_list(element, ik))
-                        self.stdout.info(f"section {section!r} with key {key!r} removed")
+                        self.stdout.write(
+                            "section ", self.style.info(section), " with key ", self.style.info(key), " removed"
+                        )
                 else:
-                    self.stderr.error(f"no found section {section!r} or key {key!r}")
+                    self.stderr.write("no found section ", self.style.error(section), " or key ", self.style.error(key))
                 return
 
             sec = self.config.get("ingore-sections", [])
             for element in sec:
                 if element == section:
                     self.config.set("ignore-sections", remove_list(element, ik))
-                    self.stdout.info(f"section {section!r} removed")
+                    self.stderr.write("section ", self.style.info(section), " removed")
             else:
-                self.stderr.error(f"no found section {section!r}")
+                self.stderr.write("no found section ", self.style.error(section))
 
-    class Update(CommandAbstract):
-        help = "update all donc"
+    class Load(CommandAbstract):
+        help = "load dconf"
 
         def handle(self, **option):
+            self.stdout.write("load dconf settings...")
             dconf = self.config.get("data", None)
             if not dconf:
                 return
 
             stream = io.StringIO(dconf)
             subprocess.run(["dconf", "load", "/"], stdin=stream)
-            self.stdout.info("dconf loaded...")

@@ -15,6 +15,9 @@ class Style(metaclass=Singleton):
             return f"{start}{text}{end}"
         return str(text)
 
+    def no(self, text):
+        return str(text)
+
     def info(self, text):
         return self._format("\33[94m", text, "\33[0m")
 
@@ -46,16 +49,18 @@ class Method:
         self._color = color
 
     def __call__(self, *ar: list[str]):
-        self.logger.write(*[self._color(t) for t in ar])
+        self.logger._write(*[self._color(t) for t in ar])
 
     def input(self, *ar: list[str]):
         self(*ar)
         return input()
 
-    def accept(self, *ar: list[str]):
+    def accept(self, *ar: list[str], force=False):
         ar = [*ar]
         ar.append("[y/n]")
         self(*ar)
+        if force:
+            return True
         return input().lower().strip() in ["y", "yes"]
 
     def choices(self, *ar: list[str], choices=None):
@@ -75,11 +80,12 @@ class Logger:
     def __init__(self, stream=sys.stdout, style=None):
         self._stream = stream
         self._style = style or Style()
+        self.write = Method(self, self._style.no)
         self.info = Method(self, self._style.info)
         self.success = Method(self, self._style.success)
         self.warning = Method(self, self._style.warning)
         self.error = Method(self, self._style.error)
 
-    def write(self, *arg: list[str]):
+    def _write(self, *arg: list[str]):
         """write texts"""
         self._stream.writelines([*arg, "\n"])

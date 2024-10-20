@@ -22,6 +22,7 @@ class CommandVSCode(SubCommandAbstract):
             if not code:
                 return
 
+            self.stdout.write("backup ", self.style.info(code), " apps...")
             res = subprocess.run([code, "--list-extensions"], capture_output=True)
             if not res:
                 self.stderr.error(f"Invalid response from {code}")
@@ -52,4 +53,5 @@ class CommandVSCode(SubCommandAbstract):
             for pkg in pkgs:
                 cmds.extend(("--install-extension", pkg))
 
+            self.stdout.write("update ", self.style.info(code), " apps...")
             subprocess.run(cmds)

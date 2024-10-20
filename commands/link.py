@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 
-from utils.utils import is_root
+from utils.utils import remove_list
 
 from .base import CommandAbstract, SubCommandAbstract
 
@@ -26,13 +26,10 @@ class CommandLink(SubCommandAbstract):
             if self.config.fs.is_system_path(source):
                 if not self.stdout.warning.accept("symlink a file to your system can be break it?"):
                     return
-                if not is_root():
-                    self.stdout.error("You are not root..")
-                    return
 
             dest, is_user = self.config.fs.save(source)
+            self.config.fs.llink(dest, source)
             self.config.add("files", (source, dest))
-            self.config.fs.llink(source, dest)
             self.stdout.write("linked ", self.style.info(dest))
 
     class Remove(CommandAbstract):
@@ -53,9 +50,8 @@ class CommandLink(SubCommandAbstract):
                 self.stdout.write("file not found...")
                 return
 
-            idx = files.index(element)
             source, dest = element
-            files = files[:idx] + files[idx + 1 :]
+            files = remove_list(element, files)
 
             self.config.fs.lcopy(dest, source)
             if not no_remove:

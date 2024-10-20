@@ -14,6 +14,6 @@ class CommandHelp(CommandAbstract):
         command = options.get("command-help")
         if command:
             if command not in list_commands:
-                return self.stderr.error(f"invalid command {command}")
+                return self.stderr.write("invalid command ", self.style.error(command))
             _, parser = list_commands[command]
         parser.print_help(self.stdout._stream)

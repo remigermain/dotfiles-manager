@@ -19,7 +19,7 @@ class CommandProfil(SubCommandAbstract):
 
         def handle(self, profile, **options):
             self.rc["profile"] = profile
-            self.stdout.success(f"switched to {profile}...")
+            self.stdout.write("switched to", self.style.info(profile), "...")
             self.rc.save()
 
     class Set(CommandAbstract):
@@ -33,7 +33,7 @@ class CommandProfil(SubCommandAbstract):
             for element in settings:
                 key, value = element.split("=", 1)
                 profilesettings[key] = cast(value)
-                self.stdout.success(f"set {key}={value}")
+                self.stdout.write("set ", self.style.info(key), "=", self.style.info(value))
 
             self.rc.save()
 
@@ -55,8 +55,11 @@ class CommandProfil(SubCommandAbstract):
                 used = ""
                 if profil == usedprofil:
                     used = f" <- {self.style.warning("used")}"
+
                 self.stdout.write(f"[{self.style.info(profil)}]{used}")
+
                 for key, value in settings.items():
                     self.stdout.write(f"{key}={value}")
+
                 if idx == len(profiles):
                     self.stdout.write("\n")
