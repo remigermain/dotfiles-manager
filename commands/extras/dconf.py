@@ -14,7 +14,8 @@ class CommandDconf(SubCommandAbstract):
         help = "backup dconf"
 
         def handle(self, **option):
-            self.stdout.write("backup dconf settings...")
+            self.stdout.write("backup ", self.style.info("dconf"), " settings...")
+
             res = subprocess.run(["dconf", "dump", "/"], capture_output=True)
             if not res:
                 return self.stderr.error("invalid response from dconf")
@@ -108,7 +109,7 @@ class CommandDconf(SubCommandAbstract):
         help = "load dconf"
 
         def handle(self, **option):
-            self.stdout.write("load dconf settings...")
+            self.stdout.write("load ", self.style.info("dconf"), " settings...")
             dconf = self.config.get("data", None)
             if not dconf:
                 return

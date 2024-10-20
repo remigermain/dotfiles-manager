@@ -16,21 +16,26 @@ class CommandScript(SubCommandAbstract):
             choices = self.config.get("commands", {}).keys()
             parser.add_argument("script-command", help="name to run script command", choices=choices)
 
-            parser.add_argument("scripts-name", nargs="*", help="run only name script specified (default to all)")
+            parser.add_argument(
+                "scripts-name", nargs="*", help="run only name script specified (default to all)", default=[]
+            )
             parser.add_argument("--match", action="store_true", default=False, help="any match name")
+            parser.add_argument("--ignore", nargs="*", dest="ignores", help="ignore scripts", default=[])
 
-        def handle(self, match, **options):
+        def handle(self, ignores, match, **options):
             script_command = options["script-command"]
             scripts_name = options["scripts-name"]
 
             commands = self.config.get("commands", {})
             scripts = commands.get(script_command, [])
+            scripts = self.matchs(scripts, scripts_name, ignores, match)
+
             if not scripts:
                 self.stdout.info("no script to run...")
                 return
 
             self.stdout.write(f"[{self.style.info(script_command)}]")
-            for script in self.matchs(scripts, scripts_name, match):
+            for script in scripts:
                 script = self.config.fs.lpath(Path(script_command) / script)
                 self.stdout.write("run ", self.style.info(script.name))
                 try:
@@ -38,16 +43,23 @@ class CommandScript(SubCommandAbstract):
                 except Exception as e:
                     self.stdout.error(f" {e}")
 
-        def matchs(self, scripts, pattern, match):
-            if not pattern:
-                return scripts
-
+        def matchs(self, scripts, pattern, ignores, match):
             filterd = set()
+
+            if not pattern:
+                pattern = scripts
+
             for script in scripts:
                 for pat in pattern:
                     pat = f"*{pat}*" if match else pat
                     if fnmatch(script, pat):
                         filterd.add(script)
+
+            for script in list(filterd):
+                for pat in ignores:
+                    pat = f"*{pat}*" if match else pat
+                    if fnmatch(script, pat):
+                        filterd.discard(script)
 
             return filterd
 

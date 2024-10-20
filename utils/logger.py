@@ -44,12 +44,14 @@ class Style(metaclass=Singleton):
 
 
 class Method:
-    def __init__(self, logger, color):
+    def __init__(self, logger, color, return_code=None):
         self.logger = logger
         self._color = color
+        self.return_code = return_code
 
     def __call__(self, *ar: list[str]):
         self.logger._write(*[self._color(t) for t in ar])
+        return self.return_code
 
     def input(self, *ar: list[str]):
         self(*ar)
@@ -84,7 +86,7 @@ class Logger:
         self.info = Method(self, self._style.info)
         self.success = Method(self, self._style.success)
         self.warning = Method(self, self._style.warning)
-        self.error = Method(self, self._style.error)
+        self.error = Method(self, self._style.error, return_code=101)
 
     def _write(self, *arg: list[str]):
         """write texts"""
