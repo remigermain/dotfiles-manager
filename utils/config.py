@@ -2,8 +2,10 @@ import hashlib
 import json
 import os
 import shutil
+import subprocess
 from functools import wraps
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 from .encoder import JsonEncoder
 from .expection import ConfigError
@@ -18,6 +20,22 @@ class NotSet: ...
 
 
 NOSET = NotSet()
+
+
+def run(cmds):
+    res = subprocess.run(cmds, capture_output=True)
+    if res.returncode == 0:
+        return
+
+    err = res.stderr.decode()
+    if "permission denied" in err.lower():
+        cmds = ["sudo", *cmds]
+        res = subprocess.run(cmds, capture_output=True)
+
+        if res.returncode == 0:
+            return
+        err = res.stderr.decode()
+    raise ValueError(err)
 
 
 class FsScope:
@@ -47,12 +65,16 @@ class FsScope:
 
     @wraps(shutil.copy2)
     def copy(self, source, dest):
-        self.remove(dest)
+        source = Path(source)
+        dest = Path(dest)
+        # self.remove(dest)
         self.mkdir(dest.parent)
         if source.is_dir():
-            return shutil.copytree(source, dest)
+            run(["cp", "-r", str(source), str(dest)])
+            # return shutil.copytree(source, dest)
         else:
-            return shutil.copy2(source, dest, follow_symlinks=False)
+            run(["cp", str(source), str(dest)])
+            # return shutil.copy2(source, dest, follow_symlinks=False)
 
     def link(self, source, dest):
         source = Path(self.lpath(source))
@@ -62,17 +84,19 @@ class FsScope:
             return False
 
         self.remove(dest)
-        dest.symlink_to(source)
+        run(["ln", "-s", str(source), str(dest)])
+        # dest.symlink_to(source)
         return True
 
     def remove(self, source: Path):
         """source is host"""
         source = Path(source).expanduser()
         if source.exists():
-            if source.is_dir() and not source.is_symlink():
-                shutil.rmtree(source)
-            else:
-                source.unlink()
+            run(["rm", "-rf", str(source)])
+            # if source.is_dir() and not source.is_symlink():
+            #     shutil.rmtree(source)
+            # else:
+            #     source.unlink()
             return True
         return False
 
@@ -91,7 +115,8 @@ class FsScope:
         return h.hexdigest()
 
     def mkdir(self, path):
-        Path(path).mkdir(exist_ok=True, parents=True)
+        run(["mkdir", "-p", str(path)])
+        # Path(path).mkdir(exist_ok=True, parents=True)
 
     # --- local ---
     def ldata(self, path):
@@ -181,6 +206,7 @@ class Config(dict):
         data = {"data": "./data"}
         if self._path.exists():
             data = json.loads(self._path.read_text())
+        self.fs = FsScope(self._path, "")
         super().__init__(data)
 
     @property
@@ -188,7 +214,12 @@ class Config(dict):
         return (Path(self._path.parent) / self["data"]).expanduser()
 
     def save(self):
-        self._path.write_text(json.dumps(self, indent=4, cls=JsonEncoder))
+        with NamedTemporaryFile() as f:
+            f.write(json.dumps(self, indent=4, cls=JsonEncoder).encode())
+            f.seek(0)
+            self.fs.copy(f.name, self._path)
+
+        # self._path.write_text(json.dumps(self, indent=4, cls=JsonEncoder))
 
     def scope(self, name):
         return ConfigScope(name, self)
@@ -201,9 +232,13 @@ class DotConfigRc(dict, metaclass=Singleton):
         if self._path.exists():
             data = json.loads(self._path.read_text())
         super().__init__(data)
+        self.fs = FsScope("", "")
 
     def save(self):
-        self._path.write_text(json.dumps(self, indent=4, cls=JsonEncoder))
+        with NamedTemporaryFile() as f:
+            f.write(json.dumps(self, indent=4, cls=JsonEncoder).encode())
+            f.seek(0)
+            self.fs.copy(f.name, self._path)
 
     @property
     def dataprofile(self):

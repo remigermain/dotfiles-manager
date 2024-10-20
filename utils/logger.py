@@ -13,7 +13,7 @@ class Style(metaclass=Singleton):
     def _format(self, start, text, end):
         if self._params.get("color", True):
             return f"{start}{text}{end}"
-        return text
+        return str(text)
 
     def info(self, text):
         return self._format("\33[94m", text, "\33[0m")
