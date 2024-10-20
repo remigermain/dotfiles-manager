@@ -1,7 +1,6 @@
 import subprocess
 
 from commands.base import CommandAbstract, SubCommandAbstract
-from utils.conf import ConfigScope
 
 
 def bincode():
@@ -19,7 +18,6 @@ class CommandVSCode(SubCommandAbstract):
         help = "backup all installed packages"
 
         def handle(self, **option):
-            config = ConfigScope.from_name(CommandVSCode.name)
             code = bincode()
             if not code:
                 return
@@ -30,7 +28,7 @@ class CommandVSCode(SubCommandAbstract):
 
             packages = [e.strip() for e in res.stdout.decode().strip().split("\n")]
 
-            config.set("packages", list(set(packages)))
+            self.config.set("packages", list(set(packages)))
 
     class Update(CommandAbstract):
         help = "update all installed packages"
@@ -39,12 +37,11 @@ class CommandVSCode(SubCommandAbstract):
             parser.add_argument("-f", "--force", action="store_true", default=True, help="force")
 
         def handle(self, force, **option):
-            config = ConfigScope.from_name(CommandVSCode.name)
             code = bincode()
             if not code:
                 return
 
-            pkgs = config.get("packages", [])
+            pkgs = self.config.get("packages", [])
             if not pkgs:
                 return
 

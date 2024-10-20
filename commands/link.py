@@ -1,7 +1,6 @@
 import argparse
 from pathlib import Path
 
-from utils.conf import ConfigScope
 from utils.utils import is_root
 
 from .base import CommandAbstract, SubCommandAbstract
@@ -17,24 +16,23 @@ class CommandLink(SubCommandAbstract):
         def add_arguments(self, parser: argparse.ArgumentParser):
             parser.add_argument("source", type=Path, help="file needed to link")
 
-        def handle(self, source, tags, **option):
-            config = ConfigScope.from_name(CommandLink.name)
-            for actual, _ in config.get("files", []):
+        def handle(self, source, **option):
+            for actual, _ in self.config.get("files", []):
                 actual = Path(actual)
                 if actual == source:
                     self.stdout.write("file already exists...")
                     return
 
-            if config.fs.is_system_path(source):
+            if self.config.fs.is_system_path(source):
                 if not self.stdout.warning.accept("symlink a file to your system can be break it?"):
                     return
                 if not is_root():
                     self.stdout.error("You are not root..")
                     return
 
-            dest, is_user = config.fs.save(source)
-            config.add("files", (source, dest), **tags)
-            config.fs.llink(source, dest)
+            dest, is_user = self.config.fs.save(source)
+            self.config.add("files", (source, dest))
+            self.config.fs.llink(source, dest)
             self.stdout.write("linked ", self.style.info(dest))
 
     class Remove(CommandAbstract):
@@ -46,8 +44,7 @@ class CommandLink(SubCommandAbstract):
             parser.add_argument("--no-remove", action="store_true", default=False, help="remove files")
 
         def handle(self, source, no_remove, **option):
-            config = ConfigScope.from_name(CommandLink.name)
-            files = config.get("files", [])
+            files = self.config.get("files", [])
             for element in files:
                 actual = Path(element[0])
                 if actual == source:
@@ -60,20 +57,19 @@ class CommandLink(SubCommandAbstract):
             source, dest = element
             files = files[:idx] + files[idx + 1 :]
 
-            config.fs.lcopy(dest, source)
+            self.config.fs.lcopy(dest, source)
             if not no_remove:
-                config.fs.lremove(dest)
-            config.set("files", files)
+                self.config.fs.lremove(dest)
+            self.config.set("files", files)
 
     class List(CommandAbstract):
         help = "list link files"
         aliases = ("ls",)
 
         def handle(self, **option):
-            config = ConfigScope.from_name(CommandLink.name)
-            files = config.get("files", [])
+            files = self.config.get("files", [])
             for source, dest in files:
-                dest = config.fs.lpath(dest)
+                dest = self.config.fs.lpath(dest)
                 self.stdout.write(source, self.style.info(self.style.bold(" -> ")), str(dest))
 
     class Update(CommandAbstract):
@@ -81,10 +77,9 @@ class CommandLink(SubCommandAbstract):
         aliases = ("up",)
 
         def handle(self, **option):
-            config = ConfigScope.from_name(CommandLink.name)
-            files = config.get("files", [])
+            files = self.config.get("files", [])
             for dest, source in files:
-                if config.fs.llink(source, dest):
+                if self.config.fs.llink(source, dest):
                     self.stdout.write("linked ", self.style.info(dest))
                 else:
                     self.stdout.write("already linked ", self.style.info(dest))

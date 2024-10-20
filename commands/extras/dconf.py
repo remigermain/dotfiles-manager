@@ -4,25 +4,23 @@ import io
 import subprocess
 
 from commands.base import CommandAbstract, SubCommandAbstract
-from utils.conf import ConfigScope
 from utils.utils import remove_list
 
 
 class CommandDconf(SubCommandAbstract):
-    help = "flatpak integration"
+    help = "dconf integration"
 
     class Backup(CommandAbstract):
-        help = "backup all deconf"
+        help = "backup all dconf"
 
         def handle(self, **option):
-            config = ConfigScope.from_name(CommandDconf.name)
             res = subprocess.run(["dconf", "dump", "/"], capture_output=True)
             if not res:
                 self.stderr.error("Invalid response from  dconf")
 
-            dconf = self._sanitize(config, res.stdout.decode())
+            dconf = self._sanitize(self.config, res.stdout.decode())
             self.stdout.info("dconf backup...")
-            config.set("data", dconf)
+            self.config.set("data", dconf)
 
         def _sanitize(self, config, dconf):
             file = io.StringIO(dconf)
@@ -62,10 +60,8 @@ class CommandDconf(SubCommandAbstract):
             parser.add_argument("sections", nargs="+", help="ignore sections")
 
         def handle(self, sections, **options):
-            config = ConfigScope.from_name(CommandDconf.name)
-
-            sections = set(config.get("ingore-sections", [])) | set(sections)
-            config.set("ingore-sections", list(sections))
+            sections = set(self.config.get("ingore-sections", [])) | set(sections)
+            self.config.set("ingore-sections", list(sections))
 
     class IgnoreKey(CommandAbstract):
         help = "ignorekey"
@@ -75,11 +71,9 @@ class CommandDconf(SubCommandAbstract):
             parser.add_argument("key", help="ignore keys")
 
         def handle(self, section, key, **options):
-            config = ConfigScope.from_name(CommandDconf.name)
-
-            ik = config.get("ingore-keys", [])
+            ik = self.config.get("ingore-keys", [])
             ik.append((section, key))
-            config.set("ingore-keys", list(ik))
+            self.config.set("ingore-keys", list(ik))
 
     class Remove(CommandAbstract):
         help = "remove sections"
@@ -89,23 +83,21 @@ class CommandDconf(SubCommandAbstract):
             parser.add_argument("key", nargs="?", help="ignore keys")
 
         def handle(self, section, key=None, **options):
-            config = ConfigScope.from_name(CommandDconf.name)
-
             if key:
-                ik = config.get("ingore-keys", [])
+                ik = self.config.get("ingore-keys", [])
                 for element in ik:
                     k, v = element
                     if k == section and v == key:
-                        config.set("ignore-keys", remove_list(element, ik))
+                        self.config.set("ignore-keys", remove_list(element, ik))
                         self.stdout.info(f"section {section!r} with key {key!r} removed")
                 else:
                     self.stderr.error(f"no found section {section!r} or key {key!r}")
                 return
 
-            sec = config.get("ingore-sections", [])
+            sec = self.config.get("ingore-sections", [])
             for element in sec:
                 if element == section:
-                    config.set("ignore-sections", remove_list(element, ik))
+                    self.config.set("ignore-sections", remove_list(element, ik))
                     self.stdout.info(f"section {section!r} removed")
             else:
                 self.stderr.error(f"no found section {section!r}")
@@ -114,8 +106,7 @@ class CommandDconf(SubCommandAbstract):
         help = "update all donc"
 
         def handle(self, **option):
-            config = ConfigScope.from_name(CommandDconf.name)
-            dconf = config.get("data", None)
+            dconf = self.config.get("data", None)
             if not dconf:
                 return
 

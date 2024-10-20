@@ -1,30 +1,43 @@
 import sys
 
+from .singleton import Singleton
 
-class Style:
+
+class Style(metaclass=Singleton):
+    def __init__(self, **params):
+        self._params = params
+
+    def config(self, **params):
+        self._params = params
+
+    def _format(self, start, text, end):
+        if self._params.get("color", True):
+            return f"{start}{text}{end}"
+        return text
+
     def info(self, text):
-        return f"\33[94m{text}\33[0m"
+        return self._format("\33[94m", text, "\33[0m")
 
     def success(self, text):
-        return f"\33[92m{text}\33[0m"
+        return self._format("\33[92m", text, "\33[0m")
 
     def error(self, text):
-        return f"\33[91m{text}\33[0m"
+        return self._format("\33[91m", text, "\33[0m")
 
     def warning(self, text):
-        return f"\33[93m{text}\33[0m"
+        return self._format("\33[93m", text, "\33[0m")
 
     def bold(self, text):
-        return f"\33[1m{text}\33[0m"
+        return self._format("\33[1m", text, "\33[0m")
 
     def italic(self, text):
-        return f"\33[3m{text}\33[0m"
+        return self._format("\33[3m", text, "\33[0m")
 
     def url(self, text):
-        return f"\33[4m{text}\33[0m"
+        return self._format("\33[4m", text, "\33[0m")
 
     def blink(self, text):
-        return f"\33[5m{text}\33[0m"
+        return self._format("\33[5m", text, "\33[0m")
 
 
 class Method:
@@ -59,9 +72,9 @@ class Method:
 
 
 class Logger:
-    def __init__(self, stream=sys.stdout):
+    def __init__(self, stream=sys.stdout, style=None):
         self._stream = stream
-        self._style = Style()
+        self._style = style or Style()
         self.info = Method(self, self._style.info)
         self.success = Method(self, self._style.success)
         self.warning = Method(self, self._style.warning)

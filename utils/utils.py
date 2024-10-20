@@ -3,12 +3,6 @@ import hashlib
 import os
 
 
-def hashs(st) -> str:
-    h = hashlib.new("md5")
-    h.update(st.encode())
-    return h.hexdigest()
-
-
 def md5sum(filename):
     h = hashlib.new("md5")
     with open(filename, "rb") as f:

@@ -1,8 +1,6 @@
 import argparse
 from pathlib import Path
 
-from utils.conf import ConfigScope
-
 from .base import CommandAbstract, SubCommandAbstract
 
 
@@ -16,16 +14,15 @@ class CommandCopy(SubCommandAbstract):
         def add_arguments(self, parser: argparse.ArgumentParser):
             parser.add_argument("source", type=Path, help="file needed to copy")
 
-        def handle(self, source, tags, **option):
-            config = ConfigScope.from_name(CommandCopy.name)
-            for actual, _ in config.get("files", []):
+        def handle(self, source, **option):
+            for actual, _ in self.config.get("files", []):
                 actual = Path(actual)
                 if actual == source:
                     self.stdout.write("file already exists...")
                     return
 
-            dest, is_user = config.fs.save(source)
-            config.add("files", (source, dest), **tags)
+            dest, is_user = self.config.fs.save(source)
+            self.config.add("files", (source, dest))
             self.stdout.write("copied ", self.style.info(source))
 
     class Remove(CommandAbstract):
@@ -37,8 +34,7 @@ class CommandCopy(SubCommandAbstract):
             parser.add_argument("--no-remove", action="store_true", default=False, help="remove files")
 
         def handle(self, source, no_remove, **option):
-            config = ConfigScope.from_name(CommandCopy.name)
-            files = config.get("files", [])
+            files = self.config.get("files", [])
             for element in files:
                 actual = Path(element[0])
                 if actual == source:
@@ -52,19 +48,18 @@ class CommandCopy(SubCommandAbstract):
             files = files[:idx] + files[idx + 1 :]
 
             if not no_remove:
-                config.fs.lremove(dest)
+                self.config.fs.lremove(dest)
             self.stdout.write("file removed...")
-            config.set("files", files)
+            self.config.set("files", files)
 
     class List(CommandAbstract):
         help = "list files"
         aliases = ("ls",)
 
         def handle(self, **option):
-            config = ConfigScope.from_name(CommandCopy.name)
-            files = config.get("files", [])
+            files = self.config.get("files", [])
             for source, dest in files:
-                dest = config.fs.lpath(dest)
+                dest = self.config.fs.lpath(dest)
                 self.stdout.write(source, self.style.info(self.style.bold(" -> ")), str(dest))
 
     class Update(CommandAbstract):
@@ -72,19 +67,18 @@ class CommandCopy(SubCommandAbstract):
         aliases = ("up",)
 
         def handle(self, **option):
-            config = ConfigScope.from_name(CommandCopy.name)
-            files = config.get("files", [])
+            files = self.config.get("files", [])
             for dest, source in files:
-                is_same = config.fs.md5sum(dest) == config.fs.lmd5sum(source)
+                is_same = self.config.fs.md5sum(dest) == self.config.fs.lmd5sum(source)
                 if is_same:
                     self.stdout.write("already copied ", self.style.info(dest))
                     continue
 
-                stat_dest = config.fs.stat(dest)
-                stat_source = config.fs.lstat(source)
+                stat_dest = self.config.fs.stat(dest)
+                stat_source = self.config.fs.lstat(source)
                 if stat_dest.st_mtime > stat_source.st_mtime:
-                    config.fs.save(dest)
+                    self.config.fs.save(dest)
                     self.stdout.write("copied from system ", self.style.info(dest))
                 else:
-                    config.fs.lcopy(source, dest)
+                    self.config.fs.lcopy(source, dest)
                     self.stdout.write("copied from local ", self.style.info(dest))

@@ -3,34 +3,52 @@ import argparse
 import inspect
 import sys
 
+from utils.commands import init_commands
+from utils.config import DotConfigRc
 from utils.logger import Logger, Style
 
 
 class CommandType(abc.ABCMeta):
     def __new__(cls, name, base, namespace):
-        if "name" not in namespace:
-            namespace["name"] = name.lower().removeprefix("command")
+        namespace.setdefault("name", name.lower().removeprefix("command"))
+        namespace.setdefault("abstract", False)
         return super().__new__(cls, name, base, namespace)
 
 
 class CommandAbstract(metaclass=CommandType):
     help = None
+    abstract = True
     aliases = ()
 
-    def __init__(self, config=None):
-        self.stdout = Logger(sys.stdout)
-        self.stderr = Logger(sys.stderr)
+    def __init__(self, config=None, parent=None):
         self.style = Style()
+        self.stdout = Logger(sys.stdout, self.style)
+        self.stderr = Logger(sys.stderr, self.style)
+        self._parent = parent
+
+    @property
+    def rc(self):
+        return DotConfigRc()
+
+    @property
+    def profil(self):
+        return self.rc["profiles"][self.rc["profile"]]
+
+    @property
+    def config(self):
+        return self.rc.dataprofile.scope(self._parent.name if self._parent else self.name)
 
     def add_arguments(self, parser: argparse.ArgumentParser):
         return parser
 
     @abc.abstractmethod
-    def handle(self, config, *ar, **options):
+    def handle(self, **options):
         raise NotImplementedError("You need to implement handle()")
 
 
 class SubCommandAbstract(CommandAbstract):
+    abstract = True
+
     def add_arguments(self, parser):
         # get only modules defined
         def predicate(symbol):
@@ -39,12 +57,10 @@ class SubCommandAbstract(CommandAbstract):
             return True
 
         subparsers = parser.add_subparsers(description="Available commands", dest=f"{self.name}_command", required=True)
-        self.__corespond = {}
-        for _, subcmd in inspect.getmembers(self, predicate=predicate):
-            subcmd_cls = subcmd()
-            self.__corespond[subcmd_cls.name] = subcmd_cls
-            command_parser = subparsers.add_parser(subcmd_cls.name, aliases=subcmd_cls.aliases, help=subcmd_cls.help)
-            subcmd_cls.add_arguments(command_parser)
+        self.__coresponds = init_commands(
+            [subcmd for _, subcmd in inspect.getmembers(self, predicate=predicate)], subparsers, parent=self
+        )
 
     def handle(self, **option):
-        return self.__corespond[option[f"{self.name}_command"]].handle(**option)
+        cmd, _ = self.__coresponds[option[f"{self.name}_command"]]
+        return cmd.handle(**option)
