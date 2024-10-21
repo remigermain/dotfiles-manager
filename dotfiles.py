@@ -11,7 +11,7 @@ from utils.logger import Style
 def main(arguments, _sub="sub") -> Optional[int]:
     parser = argparse.ArgumentParser("dotfiles manager")
 
-    parser.add_argument("--color", action="store_true", help="remove output colors", dest="color", default=None)
+    parser.add_argument("--color", action="store_true", help="active output colors", dest="color", default=None)
     parser.add_argument("--no-color", action="store_false", help="remove output colors", dest="color", default=None)
     subparsers = parser.add_subparsers(description="Available commands", dest="command", required=True)
 
