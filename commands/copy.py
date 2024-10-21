@@ -14,7 +14,7 @@ class CommandCopy(SubCommandAbstract):
         help = "add file"
 
         def add_arguments(self, parser: argparse.ArgumentParser):
-            parser.add_argument("file", dest="files", nargs="+", type=Path, help="file needed to copy")
+            parser.add_argument("files", nargs="+", type=Path, help="file needed to copy")
 
         def handle(self, files: list[Path], **option):
             files_config = self.config.get("files", [])
@@ -37,7 +37,7 @@ class CommandCopy(SubCommandAbstract):
         aliases = ("rm",)
 
         def add_arguments(self, parser: argparse.ArgumentParser):
-            parser.add_argument("file", nargs="+", dest="files", type=Path, help="file needed to remove")
+            parser.add_argument("files", nargs="+", type=Path, help="file needed to remove")
             parser.add_argument("--no-remove", action="store_true", default=False, help="remove files")
 
         def handle(self, files: list[Path], no_remove: bool, **option):

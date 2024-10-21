@@ -15,16 +15,10 @@ class CommandScript(SubCommandAbstract):
 
         def add_arguments(self, parser: argparse.ArgumentParser):
             choices = self.config.get("commands", {}).keys()
-            parser.add_argument(
-                "script-command", dest="script_command", help="name to run script command", choices=choices
-            )
+            parser.add_argument("script_command", help="name to run script command", choices=choices)
 
             parser.add_argument(
-                "scripts-name",
-                dest="scripts_name",
-                nargs="*",
-                help="run only name script specified (default to all)",
-                default=[],
+                "scripts_name", nargs="*", help="run only name script specified (default to all)", default=[]
             )
             parser.add_argument("--match", action="store_true", default=False, help="any match name")
             parser.add_argument("--ignore", nargs="*", dest="ignores", help="ignore scripts", default=[])
@@ -82,7 +76,7 @@ class CommandScript(SubCommandAbstract):
         help = "add script for command"
 
         def add_arguments(self, parser: argparse.ArgumentParser):
-            parser.add_argument("script-command", dest="script_command", help="command name")
+            parser.add_argument("script_command", help="command name")
             parser.add_argument("scripts", nargs="+", help="scripts to add")
 
         def handle(self, script_command: str, scripts: list[str], **options):

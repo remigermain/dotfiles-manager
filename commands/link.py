@@ -14,7 +14,7 @@ class CommandLink(SubCommandAbstract):
         help = "add link file"
 
         def add_arguments(self, parser: argparse.ArgumentParser):
-            parser.add_argument("file", nargs="+", dest="files", type=Path, help="file needed to link")
+            parser.add_argument("files", nargs="+", type=Path, help="file needed to link")
 
         def handle(self, files: list[str], **option):
             files_config = self.config.get("files", [])
@@ -41,7 +41,7 @@ class CommandLink(SubCommandAbstract):
         aliases = ("rm",)
 
         def add_arguments(self, parser: argparse.ArgumentParser):
-            parser.add_argument("file", nargs="+", dest="files", type=Path, help="file needed to remove")
+            parser.add_argument("files", nargs="+", type=Path, help="file needed to remove")
             parser.add_argument("--no-remove", action="store_true", default=False, help="remove files")
 
         def handle(self, files, no_remove, **option):
