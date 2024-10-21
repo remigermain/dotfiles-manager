@@ -5,7 +5,7 @@ import shutil
 import subprocess
 from functools import wraps
 from pathlib import Path
-from tempfile import NamedTemporaryFile
+from typing import Any
 
 from .encoder import JsonEncoder
 from .expection import ConfigError
@@ -37,7 +37,7 @@ class FsScope:
         self.base = base
         self.name = name
 
-    def _sanitize_path(self, path):
+    def _sanitize_path(self, path) -> [Path, bool]:
         path = Path(path).expanduser()
         if not self.is_system_path(path):
             path = Path(str(path).removeprefix(USER))
@@ -50,31 +50,22 @@ class FsScope:
         path = Path(str(path).removeprefix("/"))
         return prefix / path, is_user
 
-    def is_system_path(self, path):
+    def is_system_path(self, path) -> bool:
         return not str(Path(path).expanduser()).startswith(USER)
 
-    @wraps(Path.open)
-    def open(self, filename, *ar, **kw):
-        return Path(filename).open(*ar, **kw)
-
     def chmod(self, source, mod):
-        # Path(source).chmod(mod)
         run(["chmod", oct(mod).replace("0o", ""), str(source)])
 
-    @wraps(shutil.copy2)
     def copy(self, source, dest):
         source = Path(source)
         dest = Path(dest)
-        # self.remove(dest)
         self.mkdir(dest.parent)
         if source.is_dir():
             run(["cp", "-r", str(source), str(dest)])
-            # return shutil.copytree(source, dest)
         else:
             run(["cp", str(source), str(dest)])
-            # return shutil.copy2(source, dest, follow_symlinks=False)
 
-    def link(self, source, dest):
+    def link(self, source, dest) -> bool:
         source = Path(source).expanduser()
         dest = Path(dest).expanduser()
 
@@ -83,7 +74,6 @@ class FsScope:
 
         self.remove(dest)
         run(["ln", "-s", str(source), str(dest)])
-        # dest.symlink_to(source)
         return True
 
     def remove(self, source: Path):
@@ -91,18 +81,11 @@ class FsScope:
         source = Path(source).expanduser()
         if source.exists():
             run(["rm", "-rf", str(source)])
-            # if source.is_dir() and not source.is_symlink():
-            #     shutil.rmtree(source)
-            # else:
-            #     source.unlink()
-            return True
-        return False
 
-    @wraps(Path.exists)
-    def exist(self, source):
+    def exist(self, source) -> bool:
         return Path(source).exists()
 
-    def stat(self, source):
+    def stat(self, source) -> os.stat_result:
         return Path(source).stat()
 
     def md5sum(self, source):
@@ -139,7 +122,7 @@ class FsScope:
         """dest is host destination"""
         return self.link(self.lpath(source), dest)
 
-    def lstat(self, source):
+    def lstat(self, source) -> os.stat_result:
         return self.stat(self.lpath(source))
 
     def save(self, source):
@@ -155,18 +138,17 @@ class FsScope:
 
     def lremove(self, source):
         """source is local"""
-        return self.remove(self.lpath(source))
+        self.remove(self.lpath(source))
 
-    @wraps(Path.exists)
-    def lexist(self, source):
+    def lexist(self, source) -> bool:
         path, _ = self._sanitize_path(source)
         return self.exist(self.lpath(path))
 
-    def lmd5sum(self, source):
+    def lmd5sum(self, source) -> str:
         return self.md5sum(self.lpath(source))
 
     def lmkdir(self, path):
-        return self.mkdir(self.lpath(path))
+        self.mkdir(self.lpath(path))
 
 
 class ConfigScope:
@@ -177,7 +159,7 @@ class ConfigScope:
         self._base = config.path
         self.fs = FsScope(self._base, self.name)
 
-    def get(self, key, *ar):
+    def get(self, key, *ar) -> Any:
         if key not in self._local_config:
             if not ar:
                 return KeyError(key)
@@ -187,11 +169,6 @@ class ConfigScope:
 
     def set(self, key, content):
         self._local_config[key] = content
-        self.save()
-
-    def add(self, key, content):
-        item = self._local_config.setdefault(key, [])
-        item.append(content)
         self.save()
 
     def save(self):
@@ -211,18 +188,13 @@ class Config(dict):
         super().__init__(data)
 
     @property
-    def path(self):
+    def path(self) -> Path:
         return (Path(self._path.parent) / self["data"]).expanduser()
 
     def save(self):
-        with NamedTemporaryFile() as f:
-            f.write(json.dumps(self, indent=4, cls=JsonEncoder).encode())
-            f.seek(0)
-            self.fs.copy(f.name, self._path)
+        self.path.write_text(json.dumps(self, indent=4, cls=JsonEncoder))
 
-        # self._path.write_text(json.dumps(self, indent=4, cls=JsonEncoder))
-
-    def scope(self, name):
+    def scope(self, name) -> ConfigScope:
         return ConfigScope(name, self)
 
 
@@ -236,17 +208,14 @@ class DotConfigRc(dict, metaclass=Singleton):
         self.fs = FsScope("", "")
 
     @property
-    def path(self):
-        return self._path
+    def path(self) -> Path:
+        return Path(self._path).expanduser()
 
     def save(self):
-        with NamedTemporaryFile() as f:
-            f.write(json.dumps(self, indent=4, cls=JsonEncoder).encode())
-            f.seek(0)
-            self.fs.copy(f.name, self._path)
+        self.path.write_text(json.dumps(self, indent=4, cls=JsonEncoder))
 
     @property
-    def dataprofile(self):
+    def dataprofile(self) -> Config:
         profile = self["profile"]
         if not profile or profile not in self["profiles"]:
             raise ConfigError("profile not select...")
@@ -254,5 +223,5 @@ class DotConfigRc(dict, metaclass=Singleton):
         return Config(self["profiles"][profile]["directory"])
 
     @property
-    def configprofile(self):
+    def configprofile(self) -> dict:
         return self["profiles"].setdefault(self["profile"], {})

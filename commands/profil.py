@@ -17,7 +17,7 @@ class CommandProfil(SubCommandAbstract):
             choices = self.rc["profiles"].keys()
             parser.add_argument("profile", help="name of the profil", choices=choices)
 
-        def handle(self, profile, **options):
+        def handle(self, profile: str, **options):
             self.rc["profile"] = profile
             self.stdout.write("switched to", self.style.info(profile), "...")
             self.rc.save()
@@ -43,7 +43,7 @@ class CommandProfil(SubCommandAbstract):
         def add_arguments(self, parser: argparse.ArgumentParser):
             parser.add_argument("--raw", action="store_true", help="prinf config not formated (in json)")
 
-        def handle(self, raw, **options):
+        def handle(self, raw: bool, **options):
             profiles = self.rc["profiles"]
             usedprofil = self.rc["profile"]
 

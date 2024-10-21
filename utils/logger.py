@@ -1,4 +1,5 @@
 import sys
+from typing import Any, Optional
 
 from .singleton import Singleton
 
@@ -44,20 +45,20 @@ class Style(metaclass=Singleton):
 
 
 class Method:
-    def __init__(self, logger, color, return_code=None):
+    def __init__(self, logger, color, return_code: Optional[int] = None):
         self.logger = logger
         self._color = color
         self.return_code = return_code
 
-    def __call__(self, *ar: list[str]):
+    def __call__(self, *ar: list[str]) -> Optional[int]:
         self.logger._write(*[self._color(t) for t in ar])
         return self.return_code
 
-    def input(self, *ar: list[str]):
+    def input(self, *ar: list[str]) -> str:
         self(*ar)
         return input()
 
-    def accept(self, *ar: list[str], force=False):
+    def accept(self, *ar: list[str], force=False) -> bool:
         ar = [*ar]
         ar.append("[y/n]")
         self(*ar)
@@ -65,7 +66,7 @@ class Method:
             return True
         return input().lower().strip() in ["y", "yes"]
 
-    def choices(self, *ar: list[str], choices=None):
+    def choices(self, *ar: list[str], choices=None) -> Any:
         shoices = ", ".join([f"{c}/{idx}" for idx, c in enumerate(choices, start=1)])
         self(*ar, shoices)
         res = input().lower().strip()

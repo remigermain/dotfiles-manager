@@ -1,9 +1,10 @@
 import subprocess
+from typing import Optional
 
 from commands.base import CommandAbstract, SubCommandAbstract
 
 
-def bincode():
+def bincode() -> Optional[str]:
     if subprocess.run(["which", "code"], capture_output=True).returncode == 0:
         return "code"
     if subprocess.run(["which", "codium"], capture_output=True).returncode == 0:

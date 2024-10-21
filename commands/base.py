@@ -2,9 +2,10 @@ import abc
 import argparse
 import inspect
 import sys
+from typing import Optional
 
 from utils.commands import init_commands
-from utils.config import DotConfigRc
+from utils.config import ConfigScope, DotConfigRc
 from utils.logger import Logger, Style
 
 
@@ -27,29 +28,29 @@ class CommandAbstract(metaclass=CommandType):
         self._parent = parent
 
     @property
-    def rc(self):
+    def rc(self) -> DotConfigRc:
         return DotConfigRc()
 
     @property
-    def profil(self):
+    def profil(self) -> dict:
         return self.rc["profiles"][self.rc["profile"]]
 
     @property
-    def config(self):
+    def config(self) -> ConfigScope:
         return self.rc.dataprofile.scope(self._parent.name if self._parent else self.name)
 
     def add_arguments(self, parser: argparse.ArgumentParser):
-        return parser
+        """Add command arguments"""
 
     @abc.abstractmethod
-    def handle(self, **options):
+    def handle(self, **options) -> Optional[int]:
         raise NotImplementedError("You need to implement handle()")
 
 
 class SubCommandAbstract(CommandAbstract):
     abstract = True
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: argparse.ArgumentParser):
         # get only modules defined
         def predicate(symbol):
             if not inspect.isclass(symbol) or not issubclass(symbol, CommandAbstract) or symbol is type(self):
@@ -61,6 +62,6 @@ class SubCommandAbstract(CommandAbstract):
             [subcmd for _, subcmd in inspect.getmembers(self, predicate=predicate)], subparsers, parent=self
         )
 
-    def handle(self, **option):
+    def handle(self, **option) -> Optional[int]:
         cmd, _ = self.__coresponds[option[f"{self.name}_command"]]
         return cmd.handle(**option)

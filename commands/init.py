@@ -22,7 +22,3 @@ class CommandInit(CommandAbstract):
 
         self.rc["profiles"][profile] = {"directory": str(directory)}
         self.stdout.write(f"profil {profile!r} linked to {directory}")
-
-        # TODO create group
-        subprocess.run(["sudo", "chmod", "770", self.rc.path])
-        subprocess.run(["sudo", "chown", os.getenv("USER"), self.rc.path])

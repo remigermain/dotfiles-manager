@@ -1,3 +1,4 @@
+import argparse
 import configparser
 import fnmatch
 import io
@@ -57,7 +58,7 @@ class CommandDconf(SubCommandAbstract):
     class Ignore(CommandAbstract):
         help = "ignore sections"
 
-        def add_arguments(self, parser):
+        def add_arguments(self, parser: argparse.ArgumentParser):
             parser.add_argument("sections", nargs="+", help="ignore sections")
 
         def handle(self, sections, **options):
@@ -67,7 +68,7 @@ class CommandDconf(SubCommandAbstract):
     class IgnoreKey(CommandAbstract):
         help = "ignore sections keys"
 
-        def add_arguments(self, parser):
+        def add_arguments(self, parser: argparse.ArgumentParser):
             parser.add_argument("section", help="ignore sections")
             parser.add_argument("key", help="ignore keys")
 
@@ -79,7 +80,7 @@ class CommandDconf(SubCommandAbstract):
     class Remove(CommandAbstract):
         help = "remove sections"
 
-        def add_arguments(self, parser):
+        def add_arguments(self, parser: argparse.ArgumentParser):
             parser.add_argument("section", help="ignore sections")
             parser.add_argument("key", nargs="?", help="ignore keys")
 

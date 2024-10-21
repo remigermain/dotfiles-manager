@@ -14,49 +14,54 @@ class CommandLink(SubCommandAbstract):
         help = "add link file"
 
         def add_arguments(self, parser: argparse.ArgumentParser):
-            parser.add_argument("source", type=Path, help="file needed to link")
+            parser.add_argument("file", nargs="+", dest="files", type=Path, help="file needed to link")
 
-        def handle(self, source, **option):
-            for actual, _ in self.config.get("files", []):
-                actual = Path(actual)
-                if actual == source:
-                    self.stdout.write("file already exists...")
-                    return
+        def handle(self, files: list[str], **option):
+            files_config = self.config.get("files", [])
+            for file in files:
+                for actual, _ in files_config:
+                    actual = Path(actual)
+                    if actual == file:
+                        self.stdout.write("file ", self.style.info(file), " already exists...")
+                        continue
 
-            if self.config.fs.is_system_path(source):
-                if not self.stdout.warning.accept("symlink a file to your system can be break it?"):
-                    return
+                if self.config.fs.is_system_path(file):
+                    if not self.stdout.warning.accept("symlink a file to your system can be break it?"):
+                        continue
 
-            dest, is_user = self.config.fs.save(source)
-            self.config.fs.llink(dest, source)
-            self.config.add("files", (source, dest))
-            self.stdout.write("linked ", self.style.info(dest))
+                dest, is_user = self.config.fs.save(file)
+                self.config.fs.llink(dest, file)
+                self.stdout.write("linked ", self.style.info(dest))
+                files_config.append((file, dest))
+
+            self.config.set("files", files_config)
 
     class Remove(CommandAbstract):
         help = "remove link file"
         aliases = ("rm",)
 
         def add_arguments(self, parser: argparse.ArgumentParser):
-            parser.add_argument("source", type=Path, help="file needed to remove")
+            parser.add_argument("file", nargs="+", dest="files", type=Path, help="file needed to remove")
             parser.add_argument("--no-remove", action="store_true", default=False, help="remove files")
 
-        def handle(self, source, no_remove, **option):
-            files = self.config.get("files", [])
-            for element in files:
-                actual = Path(element[0])
-                if actual == source:
-                    break
-            else:
-                self.stdout.write("file not found...")
-                return
+        def handle(self, files, no_remove, **option):
+            files_config = self.config.get("files", [])
+            for file in files:
+                for element in files_config:
+                    actual = Path(element[0])
+                    if actual == file:
+                        break
+                else:
+                    self.stdout.write("file ", self.style.warning(file), " not found...")
+                    continue
 
-            source, dest = element
-            files = remove_list(element, files)
+                source, dest = element
+                files_config = remove_list(element, files_config)
 
-            self.config.fs.lcopy(dest, source)
-            if not no_remove:
-                self.config.fs.lremove(dest)
-            self.config.set("files", files)
+                self.config.fs.lcopy(dest, source)
+                if not no_remove:
+                    self.config.fs.lremove(dest)
+            self.config.set("files", files_config)
 
     class List(CommandAbstract):
         help = "list link files"
@@ -73,8 +78,7 @@ class CommandLink(SubCommandAbstract):
         aliases = ("up",)
 
         def handle(self, **option):
-            files = self.config.get("files", [])
-            for dest, source in files:
+            for dest, source in self.config.get("files", []):
                 if self.config.fs.llink(source, dest):
                     self.stdout.write("linked ", self.style.info(dest))
                 else:

@@ -1,3 +1,4 @@
+import argparse
 import subprocess
 
 from commands.base import CommandAbstract, SubCommandAbstract
@@ -22,7 +23,7 @@ class CommandFlatpak(SubCommandAbstract):
     class Update(CommandAbstract):
         help = "update all installed packages"
 
-        def add_arguments(self, parser):
+        def add_arguments(self, parser: argparse.ArgumentParser):
             parser.add_argument("-y", "--assumeyes", help="Automatically answer yes for all questions")
 
         def handle(self, **option):
