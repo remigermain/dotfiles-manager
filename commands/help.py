@@ -12,12 +12,23 @@ class CommandHelp(CommandAbstract):
     aliases = ("h",)
 
     def add_arguments(self, parser: argparse.ArgumentParser):
-        parser.add_argument("command-help", nargs="?", help="Show command help")
+        parser.add_argument("command-help", nargs="*", help="Show command help")
 
     def handle(self, parser, list_commands, **options):
-        command = options.get("command-help")
-        if command:
-            if command not in list_commands:
-                return self.stderr.write("invalid command ", self.style.error(command))
-            _, parser = list_commands[command]
+        commands = options.get("command-help") or []
+        lst_commands = list_commands.copy()
+
+        for idx, command in enumerate(commands, start=1):
+            if command not in lst_commands:
+                return self.stderr.write("not found command ", self.style.error(command))
+
+            cmd, parser = lst_commands[command]
+            if idx == len(commands):
+                break
+
+            try:
+                lst_commands = cmd.subcommands()
+            except NotImplementedError:
+                return self.stderr.write("not found command ", self.style.error(command))
+
         parser.print_help(self.stdout._stream)

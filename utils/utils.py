@@ -21,3 +21,12 @@ def cast(value) -> Any:
 def remove_list[T](element: T, lst: list[T]) -> list[T]:
     idx = lst.index(element)
     return lst[:idx] + lst[idx + 1 :]
+
+
+def register_command(*commands):
+    def _wraps(_cls):
+        for command in commands:
+            setattr(_cls, command.__name__, command)
+        return _cls
+
+    return _wraps

@@ -10,7 +10,6 @@ from .base import CommandAbstract, SubCommandAbstract
 @require_rc(False)
 @require_config(False)
 class CommandProfil(SubCommandAbstract):
-    name = "profil"
     help = "profil settings"
 
     class Use(CommandAbstract):

@@ -10,7 +10,6 @@ from .base import CommandAbstract
 @require_rc(False)
 @require_config(False)
 class CommandInit(CommandAbstract):
-    name = "init"
     help = "initialise dotfile"
 
     def add_arguments(self, parser: argparse.ArgumentParser):

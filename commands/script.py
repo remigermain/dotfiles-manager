@@ -65,6 +65,7 @@ class CommandScript(SubCommandAbstract):
 
     class List(CommandAbstract):
         help = "list all installed scripts"
+        aliases = ("ls",)
 
         def handle(self, **options):
             for command, scripts in self.config.get("commands", {}).items():

@@ -43,6 +43,9 @@ class CommandAbstract(metaclass=CommandType):
     def add_arguments(self, parser: argparse.ArgumentParser):
         """Add command arguments"""
 
+    def subcommands(self):
+        raise NotImplementedError("You need to implement subcommands()")
+
     @abc.abstractmethod
     def handle(self, **options) -> Optional[int]:
         raise NotImplementedError("You need to implement handle()")
@@ -50,6 +53,9 @@ class CommandAbstract(metaclass=CommandType):
 
 class SubCommandAbstract(CommandAbstract):
     abstract = True
+
+    def subcommands(self):
+        return self._coresponds
 
     def add_arguments(self, parser: argparse.ArgumentParser):
         # get only modules defined
@@ -60,10 +66,10 @@ class SubCommandAbstract(CommandAbstract):
 
         subparsers = parser.add_subparsers(description="Available commands", dest=f"{self.name}_command", required=True)
         parent = self._parent or self
-        self.__coresponds = init_commands(
+        self._coresponds = init_commands(
             [subcmd for _, subcmd in inspect.getmembers(type(self), predicate=predicate)], subparsers, parent=parent
         )
 
     def handle(self, **option) -> Optional[int]:
-        cmd, _ = self.__coresponds[option[f"{self.name}_command"]]
+        cmd, _ = self._coresponds[option[f"{self.name}_command"]]
         return cmd.handle(**option)

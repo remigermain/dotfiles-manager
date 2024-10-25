@@ -79,6 +79,7 @@ class CommandDconf(SubCommandAbstract):
 
     class Remove(CommandAbstract):
         help = "remove sections"
+        aliases = ("rm",)
 
         def add_arguments(self, parser: argparse.ArgumentParser):
             parser.add_argument("section", help="ignore sections")
@@ -106,8 +107,9 @@ class CommandDconf(SubCommandAbstract):
             else:
                 self.stderr.write("no found section ", self.style.error(section))
 
-    class Load(CommandAbstract):
+    class Upload(CommandAbstract):
         help = "load dconf"
+        alias = ("load",)
 
         def handle(self, **option):
             self.stdout.write("load ", self.style.info("dconf"), " settings...")
