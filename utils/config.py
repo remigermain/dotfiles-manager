@@ -13,6 +13,7 @@ from .singleton import Singleton
 
 DOTFILE_RC = Path("~/.dotfilerc").expanduser()
 USER = os.getenv("HOME") + "/"
+DEFAULT_PROFILE = "base"
 
 
 def run(cmds):
@@ -60,6 +61,7 @@ class FsScope:
         source = Path(source)
         dest = Path(dest)
         self.mkdir(dest.parent)
+        self.remove(dest)
         if source.is_dir():
             run(["cp", "-r", str(source), str(dest)])
         else:
@@ -192,7 +194,7 @@ class Config(dict):
         return (Path(self._path.parent) / self["data"]).expanduser()
 
     def save(self):
-        self.path.write_text(json.dumps(self, indent=4, cls=JsonEncoder))
+        self._path.write_text(json.dumps(self, indent=4, cls=JsonEncoder))
 
     def scope(self, name) -> ConfigScope:
         return ConfigScope(name, self)
@@ -201,9 +203,9 @@ class Config(dict):
 class DotConfigRc(dict, metaclass=Singleton):
     def __init__(self):
         self._path = DOTFILE_RC
-        data = {"profile": "base", "profiles": {}}
+        data = {"profile": DEFAULT_PROFILE, "profiles": {}}
         if self._path.exists():
-            data = json.loads(self._path.read_text())
+            data = data | json.loads(self._path.read_text() + "\n")
         super().__init__(data)
         self.fs = FsScope("", "")
 
@@ -213,6 +215,7 @@ class DotConfigRc(dict, metaclass=Singleton):
 
     def save(self):
         self.path.write_text(json.dumps(self, indent=4, cls=JsonEncoder))
+        self.path.chmod(0o664)
 
     @property
     def dataprofile(self) -> Config:
@@ -224,4 +227,20 @@ class DotConfigRc(dict, metaclass=Singleton):
 
     @property
     def configprofile(self) -> dict:
-        return self["profiles"].setdefault(self["profile"], {})
+        return self["profiles"].get(self["profile"], {})
+
+
+def rc_exists():
+    return DOTFILE_RC.exists()
+
+
+def config_exists():
+    if not DOTFILE_RC.exists():
+        return False
+
+    try:
+        _ = DotConfigRc().dataprofile
+    except ConfigError:
+        return False
+    else:
+        return True

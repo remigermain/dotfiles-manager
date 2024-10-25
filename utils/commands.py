@@ -1,8 +1,11 @@
 import argparse
 import importlib
 import inspect
+from functools import partial
 from pathlib import Path
 from typing import ForwardRef, Union
+
+from .config import config_exists, rc_exists
 
 BASE = Path(__file__).parent.parent
 
@@ -14,6 +17,10 @@ def generate_path(path):
         module.insert(0, path.name)
         path = path.parent
     return ".".join(module)
+
+
+satus_rc_exists = rc_exists()
+status_config_exists = config_exists()
 
 
 def list_commands():
@@ -34,6 +41,12 @@ def list_commands():
                 or symbol.abstract is True
             ):
                 return False
+
+            if has_required(symbol, "rc") and not satus_rc_exists:
+                return False
+            if has_required(symbol, "config") and not status_config_exists:
+                return False
+
             return True
 
         for _, clss in inspect.getmembers(module, predicate=predicate):
@@ -49,7 +62,9 @@ def init_commands(commands, parser, parent=None):
     for command in commands:
         command_cls = command(parent=parent)
         command_parser = parser.add_parser(command_cls.name, aliases=command_cls.aliases, help=command_cls.help)
-        corespond[command_cls.name] = command_cls, command_parser
+        info = (command_cls, command_parser)
+        for name in [command_cls.name, *command_cls.aliases]:
+            corespond[name] = info
         command_cls.add_arguments(command_parser)
 
     return corespond
@@ -65,3 +80,26 @@ def parse_options(
     options["list_commands"] = corresponds
 
     return options
+
+
+COMMAND_CONFIG = "COMMAND_CONFIG"
+
+
+def has_required(_cls, key):
+    if not hasattr(_cls, COMMAND_CONFIG):
+        return False
+
+    return getattr(_cls, COMMAND_CONFIG).get(key, False)
+
+
+def _wrap(key: str, status: bool, cls):
+    getattr(cls, COMMAND_CONFIG)[key] = status
+    return cls
+
+
+def require_rc(status: bool):
+    return partial(_wrap, "rc", status)
+
+
+def require_config(status: bool):
+    return partial(_wrap, "config", status)

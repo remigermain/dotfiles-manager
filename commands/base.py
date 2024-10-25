@@ -4,7 +4,7 @@ import inspect
 import sys
 from typing import Optional
 
-from utils.commands import init_commands
+from utils.commands import COMMAND_CONFIG, init_commands
 from utils.config import ConfigScope, DotConfigRc
 from utils.logger import Logger, Style
 
@@ -13,6 +13,7 @@ class CommandType(abc.ABCMeta):
     def __new__(cls, name, base, namespace):
         namespace.setdefault("name", name.lower().removeprefix("command"))
         namespace.setdefault("abstract", False)
+        namespace.setdefault(COMMAND_CONFIG, {"rc": True, "config": True})
         return super().__new__(cls, name, base, namespace)
 
 
@@ -58,8 +59,9 @@ class SubCommandAbstract(CommandAbstract):
             return True
 
         subparsers = parser.add_subparsers(description="Available commands", dest=f"{self.name}_command", required=True)
+        parent = self._parent or self
         self.__coresponds = init_commands(
-            [subcmd for _, subcmd in inspect.getmembers(self, predicate=predicate)], subparsers, parent=self
+            [subcmd for _, subcmd in inspect.getmembers(type(self), predicate=predicate)], subparsers, parent=parent
         )
 
     def handle(self, **option) -> Optional[int]:

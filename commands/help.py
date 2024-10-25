@@ -1,8 +1,12 @@
 import argparse
 
+from utils.commands import require_config, require_rc
+
 from .base import CommandAbstract
 
 
+@require_rc(False)
+@require_config(False)
 class CommandHelp(CommandAbstract):
     help = "show help"
     aliases = ("h",)

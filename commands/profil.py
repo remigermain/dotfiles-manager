@@ -1,11 +1,14 @@
 import argparse
 import json
 
+from utils.commands import require_config, require_rc
 from utils.utils import cast
 
 from .base import CommandAbstract, SubCommandAbstract
 
 
+@require_rc(False)
+@require_config(False)
 class CommandProfil(SubCommandAbstract):
     name = "profil"
     help = "profil settings"
@@ -18,8 +21,12 @@ class CommandProfil(SubCommandAbstract):
             parser.add_argument("profile", help="name of the profil", choices=choices)
 
         def handle(self, profile: str, **options):
+            if self.rc["profile"] == profile:
+                self.stdout.write("already set to ", self.style.info(profile), "...")
+                return
+
             self.rc["profile"] = profile
-            self.stdout.write("switched to", self.style.info(profile), "...")
+            self.stdout.write("switched to ", self.style.info(profile), "...")
             self.rc.save()
 
     class Set(CommandAbstract):

@@ -1,14 +1,14 @@
 import argparse
 from pathlib import Path
 
+from commands.base import CommandAbstract, SubCommandAbstract
 from utils.utils import remove_list
-
-from .base import CommandAbstract, SubCommandAbstract
 
 
 class CommandCopy(SubCommandAbstract):
     help = "copy file"
     aliases = ("cp",)
+    abstract = True
 
     class Add(CommandAbstract):
         help = "add file"
@@ -17,20 +17,20 @@ class CommandCopy(SubCommandAbstract):
             parser.add_argument("files", nargs="+", type=Path, help="file needed to copy")
 
         def handle(self, files: list[Path], **option):
-            files_config = self.config.get("files", [])
+            files_config = self.config.get("copy", [])
 
             for file in files:
                 for actual, _ in files_config:
                     actual = Path(actual)
                     if actual == file:
                         self.stdout.write("file ", self.style.warning(file), " already exists...")
-                        continue
+                        break
+                else:
+                    dest, is_user = self.config.fs.save(file)
+                    files_config.append((file, dest))
+                    self.stdout.write("copied ", self.style.info(file))
 
-                dest, is_user = self.config.fs.save(file)
-                files_config.append((file, dest))
-                self.stdout.write("copied ", self.style.info(file))
-
-            self.config.set("files", files_config)
+            self.config.set("copy", files_config)
 
     class Remove(CommandAbstract):
         help = "remove file"
@@ -41,9 +41,9 @@ class CommandCopy(SubCommandAbstract):
             parser.add_argument("--no-remove", action="store_true", default=False, help="remove files")
 
         def handle(self, files: list[Path], no_remove: bool, **option):
-            files_config = self.config.get("files", [])
+            files_config = self.config.get("copy", [])
             for file in files:
-                for element in files:
+                for element in files_config:
                     actual = Path(element[0])
                     if actual == file:
                         break
@@ -55,16 +55,16 @@ class CommandCopy(SubCommandAbstract):
 
                 if not no_remove:
                     self.config.fs.lremove(dest)
-                self.stdout.write("file ", self.style.info(dest), "removed...")
+                self.stdout.write("file ", self.style.info(dest), " removed...")
 
-            self.config.set("files", files_config)
+            self.config.set("copy", files_config)
 
     class List(CommandAbstract):
         help = "list files"
         aliases = ("ls",)
 
         def handle(self, **option):
-            for source, dest in self.config.get("files", []):
+            for source, dest in self.config.get("copy", []):
                 dest = self.config.fs.lpath(dest)
                 self.stdout.write(source, self.style.info(self.style.bold(" -> ")), str(dest))
 
@@ -73,7 +73,7 @@ class CommandCopy(SubCommandAbstract):
         aliases = ("up",)
 
         def handle(self, **option):
-            for dest, source in self.config.get("files", []):
+            for dest, source in self.config.get("copy", []):
                 is_same = self.config.fs.md5sum(dest) == self.config.fs.lmd5sum(source)
                 if is_same:
                     self.stdout.write("already copied ", self.style.info(dest))
