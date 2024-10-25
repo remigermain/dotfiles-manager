@@ -2,35 +2,18 @@ import hashlib
 import json
 import os
 import shutil
-import subprocess
 from functools import wraps
 from pathlib import Path
 from typing import Any
 
 from .encoder import JsonEncoder
 from .expection import ConfigError
+from .shell import run
 from .singleton import Singleton
 
 DOTFILE_RC = Path("~/.dotfilerc").expanduser()
 USER = os.getenv("HOME") + "/"
 DEFAULT_PROFILE = "base"
-
-
-def run(cmds):
-    res = subprocess.run(cmds, capture_output=True)
-    if res.returncode == 0:
-        return
-
-    err = res.stderr.decode()
-    if "permission denied" in err.lower():
-        cmds = ["sudo", *cmds]
-        res = subprocess.run(cmds, capture_output=True)
-
-        if res.returncode == 0:
-            return
-        err = res.stderr.decode()
-
-    raise ValueError(err)
 
 
 class FsScope:
