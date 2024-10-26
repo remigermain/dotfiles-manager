@@ -13,11 +13,10 @@ class CommandDnf(SubCommandAbstract):
         def handle(self, **option):
             self.stdout.write("backup ", self.style.info("dnf"), " apps...")
             res = run(["dnf", "repoquery", "--userinstalled", "--qf", "%{name}"])
-
             if not res:
                 return self.stderr.error("invalid response from dnf")
 
-            packages = [e.strip().split(":")[0].strip() for e in res.decode().strip().split("\n")]
+            packages = [e.strip().split(":")[0].strip() for e in res.stdout.strip().split("\n")]
 
             self.config.set("packages", packages)
 

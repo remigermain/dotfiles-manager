@@ -5,9 +5,9 @@ from dotfiles_manager.utils.shell import run
 
 
 def bincode() -> Optional[str]:
-    if run(["which", "code"], capture_output=True).returncode == 0:
+    if run(["which", "code"], showerror=False).returncode == 0:
         return "code"
-    if run(["which", "codium"], capture_output=True).returncode == 0:
+    if run(["which", "codium"], showerror=False).returncode == 0:
         return "codium"
     return
 
@@ -24,11 +24,11 @@ class CommandVSCode(SubCommandAbstract):
                 return
 
             self.stdout.write("backup ", self.style.info(code), " apps...")
-            res = run([code, "--list-extensions"], capture_output=True)
+            res = run([code, "--list-extensions"], sudo=False)
             if not res:
-                self.stderr.error(f"Invalid response from {code}")
+                return self.stderr.error(f"Invalid response from {code}")
 
-            packages = [e.strip() for e in res.stdout.decode().strip().split("\n")]
+            packages = [e.strip() for e in res.stdout.strip().split("\n")]
 
             self.config.set("packages", list(set(packages)))
 
@@ -55,4 +55,4 @@ class CommandVSCode(SubCommandAbstract):
                 cmds.extend(("--install-extension", pkg))
 
             self.stdout.write("update ", self.style.info(code), " apps...")
-            run(cmds)
+            return run(cmds, sudo=False, capture_output=False)

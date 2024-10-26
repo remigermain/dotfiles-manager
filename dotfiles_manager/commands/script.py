@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Optional
 
 from dotfiles_manager.commands.base import CommandAbstract, SubCommandAbstract
+from dotfiles_manager.utils.shell import run
 
 
 class CommandScript(SubCommandAbstract):
@@ -71,6 +72,13 @@ class CommandScript(SubCommandAbstract):
                 self.stdout.write(f"[{self.style.info(command)}]")
                 for script in list((self.config.path / command).glob("*")):
                     self.stdout.write(" - ", self.style.info(script.name))
+
+    class Chmod(CommandAbstract):
+        help = "chmod all installed scripts"
+
+        def handle(self, **options):
+            if not run(["chmod", "-R", "+x", str(self.config.path)]):
+                return self.stderr.error("can't chmod directory")
 
     class Add(CommandAbstract):
         help = "add script for command"

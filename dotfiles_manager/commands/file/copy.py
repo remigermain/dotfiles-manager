@@ -29,6 +29,8 @@ class CommandCopy(SubCommandAbstract):
                         break
                 else:
                     file = file.resolve()
+                    if self.config.fs.is_dir(file):
+                        file = file.parent
                     dest, is_user = self.config.fs.save(file)
                     files_config.append((file, dest))
                     self.stdout.write("copied ", self.style.info(file))
@@ -85,16 +87,20 @@ class CommandCopy(SubCommandAbstract):
 
         def handle(self, **option):
             for dest, source in self.config.get("copy", []):
-                is_same = self.config.fs.md5sum(dest) == self.config.fs.lmd5sum(source)
-                if is_same:
-                    self.stdout.write("already copied ", self.style.info(dest))
-                    continue
+                exist = self.config.fs.exist(dest)
+                if exist:
+                    if not self.config.fs.is_dir(dest):
+                        is_same = self.config.fs.md5sum(dest) == self.config.fs.lmd5sum(source)
+                        if is_same:
+                            self.stdout.write("already copied ", self.style.info(dest))
+                            continue
 
-                stat_dest = self.config.fs.stat(dest)
-                stat_source = self.config.fs.lstat(source)
-                if stat_dest.st_mtime > stat_source.st_mtime:
-                    self.config.fs.save(dest)
-                    self.stdout.write("copied from system ", self.style.info(dest))
-                else:
+                    stat_dest = self.config.fs.stat(dest)
+                    stat_source = self.config.fs.lstat(source)
+
+                if not exist or stat_dest.st_mtime < stat_source.st_mtime:
                     self.config.fs.lcopy(source, dest)
                     self.stdout.write("copied from local ", self.style.info(dest))
+                else:
+                    self.config.fs.save(dest)
+                    self.stdout.write("copied from system ", self.style.info(dest))

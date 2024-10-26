@@ -10,11 +10,11 @@ class CommandGnome(SubCommandAbstract):
 
         def handle(self, **option):
             self.stdout.write("backup ", self.style.info("gnome extension"), " apps...")
-            res = run(["gext", "list", "--only-uuid"], capture_output=True)
+            res = run(["gext", "list", "--only-uuid"])
             if not res:
                 return self.stderr.error("invalid response from gnome_extension_cli")
 
-            packages = [e.strip() for e in res.stdout.decode().strip().split("\n")]
+            packages = [e.strip() for e in res.stdout.strip().split("\n")]
 
             self.config.set("packages", packages)
 
@@ -27,6 +27,6 @@ class CommandGnome(SubCommandAbstract):
             if not pkgs:
                 return
 
-            res = run(["gext", "install", *pkgs])
+            res = run(["gext", "install", *pkgs], capture_output=False)
             if not res:
                 return self.stderr.error("invalid response from gnome_extension_cli")

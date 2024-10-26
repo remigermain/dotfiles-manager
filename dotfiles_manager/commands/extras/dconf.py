@@ -18,11 +18,11 @@ class CommandDconf(SubCommandAbstract):
         def handle(self, **option):
             self.stdout.write("backup ", self.style.info("dconf"), " settings...")
 
-            res = run(["dconf", "dump", "/"], capture_output=True)
+            res = run(["dconf", "dump", "/"])
             if not res:
-                return self.stderr.error("invalid response from dconf")
+                return self.stderr.error("invalid response from dconf...")
 
-            dconf = self._sanitize(self.config, res.stdout.decode())
+            dconf = self._sanitize(self.config, res.stdout)
             self.config.set("data", dconf)
 
         def _sanitize(self, config, dconf):
@@ -108,7 +108,7 @@ class CommandDconf(SubCommandAbstract):
             else:
                 self.stderr.write("no found section ", self.style.error(section))
 
-    class Upload(CommandAbstract):
+    class Update(CommandAbstract):
         help = "load dconf"
         alias = ("load",)
 
@@ -119,4 +119,5 @@ class CommandDconf(SubCommandAbstract):
                 return
 
             stream = io.StringIO(dconf)
-            run(["dconf", "load", "/"], stdin=stream)
+            if not run(["dconf", "load", "/"], stdin=stream):
+                return self.stderr.error("invalid response from dconf...")

@@ -12,11 +12,11 @@ class CommandFlatpak(SubCommandAbstract):
 
         def handle(self, **option):
             self.stdout.write("backup ", self.style.info("flatpak"), " apps...")
-            res = run(["flatpak", "list", "--app", "--columns=application"], capture_output=True)
+            res = run(["flatpak", "list", "--app", "--columns=application"], sudo=False)
             if not res:
                 return self.stderr.error("invalid response from flatpak")
 
-            packages = [e.strip() for e in res.stdout.decode().strip().split("\n")]
+            packages = [e.strip() for e in res.stdout.strip().split("\n")]
 
             self.config.set("packages", packages)
 
@@ -29,6 +29,6 @@ class CommandFlatpak(SubCommandAbstract):
         def handle(self, **option):
             self.stdout.write("update ", self.style.info("flatpak"), " apps...")
             pkgs = self.config.get("packages", [])
-            res = run(["flatpak", "install", "--or-update", *pkgs])
+            res = run(["flatpak", "install", "--or-update", *pkgs], sudo=False, capture_output=False)
             if not res:
                 return self.stderr.error("invalid response from flatpak")

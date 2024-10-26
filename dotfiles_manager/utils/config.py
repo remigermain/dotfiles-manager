@@ -39,9 +39,9 @@ class FsScope:
 
     def chmod(self, source, mod):
         run(["chmod", oct(mod).replace("0o", ""), str(source)])
-    
+
     def is_dir(self, source):
-        r = run([f"[ -d \"{source}\" ] && echo true || echo false"], err=True).stdout.lower()
+        r = run([f'[ -d "{source}" ] && echo true || echo false']).stdout.lower().strip()
         return r == "true"
 
     def copy(self, source, dest):
@@ -49,10 +49,7 @@ class FsScope:
         dest = Path(dest)
         self.mkdir(dest.parent)
         self.remove(dest)
-        # if self.is_dir(source):
         run(["cp", "-rf", str(source), str(dest)])
-        # else:
-        #     run(["cp", str(source), str(dest)])
 
     def link(self, source, dest) -> bool:
         source = Path(source).expanduser()
@@ -68,21 +65,25 @@ class FsScope:
     def remove(self, source: Path):
         """source is host"""
         source = Path(source).expanduser()
-        if source.exists():
+        if self.exist(source):
             run(["rm", "-rf", str(source)])
 
     def exist(self, source) -> bool:
-        return Path(source).exists()
+        r = run([f'[ -e "{source}" ] && echo true || echo false']).stdout.lower().strip()
+        return r == "true"
 
     def stat(self, source) -> os.stat_result:
         return Path(source).stat()
 
     def md5sum(self, source):
-        h = hashlib.new("md5")
-        with open(source, "rb") as f:
-            for chunk in iter(lambda: f.read(128 * h.block_size), b""):
-                h.update(chunk)
-        return h.hexdigest()
+        try:
+            with open(source, "rb") as f:
+                h = hashlib.new("md5")
+                for chunk in iter(lambda: f.read(128 * h.block_size), b""):
+                    h.update(chunk)
+                return h.hexdigest()
+        except FileNotFoundError:
+            return None
 
     def mkdir(self, path):
         run(["mkdir", "-p", str(path)])
