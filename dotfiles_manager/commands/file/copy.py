@@ -1,14 +1,15 @@
 import argparse
+import stat
 from pathlib import Path
 
-from commands.base import CommandAbstract, SubCommandAbstract
-from utils.utils import remove_list
+from dotfiles_manager.commands.base import CommandAbstract, SubCommandAbstract
+from dotfiles_manager.utils.utils import remove_list
 
 
 class CommandCopy(SubCommandAbstract):
     help = "copy file"
     aliases = ("cp",)
-    abstract = True
+    parent = "file"
 
     class Add(CommandAbstract):
         help = "add file"
@@ -20,12 +21,14 @@ class CommandCopy(SubCommandAbstract):
             files_config = self.config.get("copy", [])
 
             for file in files:
+                file = Path(file).expanduser().absolute()
                 for actual, _ in files_config:
                     actual = Path(actual)
                     if actual == file:
                         self.stdout.write("file ", self.style.warning(file), " already exists...")
                         break
                 else:
+                    file = file.resolve()
                     dest, is_user = self.config.fs.save(file)
                     files_config.append((file, dest))
                     self.stdout.write("copied ", self.style.info(file))
@@ -43,6 +46,7 @@ class CommandCopy(SubCommandAbstract):
         def handle(self, files: list[Path], no_remove: bool, **option):
             files_config = self.config.get("copy", [])
             for file in files:
+                file = Path(file).expanduser().absolute()
                 for element in files_config:
                     actual = Path(element[0])
                     if actual == file:
@@ -65,8 +69,15 @@ class CommandCopy(SubCommandAbstract):
 
         def handle(self, **option):
             for source, dest in self.config.get("copy", []):
-                dest = self.config.fs.lpath(dest)
-                self.stdout.write(source, self.style.info(self.style.bold(" -> ")), str(dest))
+                statsource = Path(source).expanduser().absolute().stat()
+
+                ftype = "."
+                if stat.S_ISDIR(statsource.st_mode):
+                    ftype = "d"
+                elif stat.S_ISREG(statsource.st_mode):
+                    ftype = "f"
+
+                self.stdout.write(f"{ftype} ", source, self.style.info(self.style.bold(" -> ")), str(dest))
 
     class Update(CommandAbstract):
         help = "update files"

@@ -1,8 +1,7 @@
 import argparse
 
-from utils.commands import require_config, require_rc
-
-from .base import CommandAbstract
+from dotfiles_manager.commands.base import CommandAbstract
+from dotfiles_manager.utils.commands import require_config, require_rc
 
 
 @require_rc(False)

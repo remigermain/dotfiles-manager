@@ -1,10 +1,9 @@
 import argparse
 from pathlib import Path
 
-from utils.commands import require_config, require_rc
-from utils.config import DEFAULT_PROFILE
-
-from .base import CommandAbstract
+from dotfiles_manager.commands.base import CommandAbstract
+from dotfiles_manager.utils.commands import require_config, require_rc
+from dotfiles_manager.utils.config import DEFAULT_PROFILE
 
 
 @require_rc(False)

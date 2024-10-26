@@ -3,22 +3,22 @@ import argparse
 import sys
 from typing import Optional
 
-from utils.commands import init_commands, list_commands, parse_options
-from utils.config import DotConfigRc
-from utils.logger import Style
+from .utils.commands import init_commands, list_commands, parse_options
+from .utils.config import DotConfigRc
+from .utils.logger import Style
 
 
-def main(arguments, _sub="sub") -> Optional[int]:
+def main(arguments) -> Optional[int]:
     parser = argparse.ArgumentParser("dotfiles manager")
 
     parser.add_argument("--color", action="store_true", help="active output colors", dest="color", default=None)
     parser.add_argument("--no-color", action="store_false", help="remove output colors", dest="color", default=None)
-    subparsers = parser.add_subparsers(description="Available commands", dest="command", required=True)
+    subparsers = parser.add_subparsers(description="Available commands", dest="MAIN_command", required=True)
 
     coresponds = init_commands(list_commands(), subparsers)
     options = parse_options(coresponds, parser, arguments)
 
-    command, _ = coresponds[options["command"]]
+    command, _ = coresponds[options["MAIN_command"]]
 
     color = DotConfigRc().configprofile.get("color", True)
     if isinstance(options["color"], bool):
@@ -31,6 +31,8 @@ def main(arguments, _sub="sub") -> Optional[int]:
     except KeyboardInterrupt:
         return 100
 
+def cli():
+    exit(main(sys.argv[1:]))
 
 if __name__ == "__main__":
-    exit(main(sys.argv[1:], _sub=""))
+    cli()

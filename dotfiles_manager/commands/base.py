@@ -4,9 +4,9 @@ import inspect
 import sys
 from typing import Optional
 
-from utils.commands import COMMAND_CONFIG, init_commands
-from utils.config import ConfigScope, DotConfigRc
-from utils.logger import Logger, Style
+from dotfiles_manager.utils.commands import COMMAND_CONFIG, init_commands
+from dotfiles_manager.utils.config import ConfigScope, DotConfigRc
+from dotfiles_manager.utils.logger import Logger, Style
 
 
 class CommandType(abc.ABCMeta):
@@ -21,12 +21,13 @@ class CommandAbstract(metaclass=CommandType):
     help = None
     abstract = True
     aliases = ()
+    parent = None
 
     def __init__(self, config=None, parent=None):
         self.style = Style()
         self.stdout = Logger(sys.stdout, self.style)
         self.stderr = Logger(sys.stderr, self.style)
-        self._parent = parent
+        self._parent = parent or self.parent
 
     @property
     def rc(self) -> DotConfigRc:
@@ -38,7 +39,13 @@ class CommandAbstract(metaclass=CommandType):
 
     @property
     def config(self) -> ConfigScope:
-        return self.rc.dataprofile.scope(self._parent.name if self._parent else self.name)
+        scopename = self.name
+        if self._parent:
+            if issubclass(type(self._parent), (CommandAbstract, SubCommandAbstract)):
+                scopename = self._parent.name
+            else:
+                scopename = self._parent
+        return self.rc.dataprofile.scope(scopename)
 
     def add_arguments(self, parser: argparse.ArgumentParser):
         """Add command arguments"""
@@ -64,12 +71,14 @@ class SubCommandAbstract(CommandAbstract):
                 return False
             return True
 
-        subparsers = parser.add_subparsers(description="Available commands", dest=f"{self.name}_command", required=True)
+        subparsers = parser.add_subparsers(
+            description="Available commands", dest=f"SUBCOMMAND_{self.name}_command", required=True
+        )
         parent = self._parent or self
         self._coresponds = init_commands(
             [subcmd for _, subcmd in inspect.getmembers(type(self), predicate=predicate)], subparsers, parent=parent
         )
 
     def handle(self, **option) -> Optional[int]:
-        cmd, _ = self._coresponds[option[f"{self.name}_command"]]
+        cmd, _ = self._coresponds[option[f"SUBCOMMAND_{self.name}_command"]]
         return cmd.handle(**option)

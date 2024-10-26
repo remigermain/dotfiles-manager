@@ -18,7 +18,7 @@ def cast(value) -> Any:
         return value
 
 
-def remove_list[T](element: T, lst: list[T]) -> list[T]:
+def remove_list(element: Any, lst: list[Any]) -> list[Any]:
     idx = lst.index(element)
     return lst[:idx] + lst[idx + 1 :]
 

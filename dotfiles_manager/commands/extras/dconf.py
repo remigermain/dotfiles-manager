@@ -4,8 +4,9 @@ import fnmatch
 import io
 import subprocess
 
-from commands.base import CommandAbstract, SubCommandAbstract
-from utils.utils import remove_list
+from dotfiles_manager.commands.base import CommandAbstract, SubCommandAbstract
+from dotfiles_manager.utils.shell import run
+from dotfiles_manager.utils.utils import remove_list
 
 
 class CommandDconf(SubCommandAbstract):
@@ -17,7 +18,7 @@ class CommandDconf(SubCommandAbstract):
         def handle(self, **option):
             self.stdout.write("backup ", self.style.info("dconf"), " settings...")
 
-            res = subprocess.run(["dconf", "dump", "/"], capture_output=True)
+            res = run(["dconf", "dump", "/"], capture_output=True)
             if not res:
                 return self.stderr.error("invalid response from dconf")
 
@@ -118,4 +119,4 @@ class CommandDconf(SubCommandAbstract):
                 return
 
             stream = io.StringIO(dconf)
-            subprocess.run(["dconf", "load", "/"], stdin=stream)
+            run(["dconf", "load", "/"], stdin=stream)

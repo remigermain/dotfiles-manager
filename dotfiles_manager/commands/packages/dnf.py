@@ -1,7 +1,7 @@
 import argparse
 
-from commands.base import CommandAbstract, SubCommandAbstract
-from utils.shell import run
+from dotfiles_manager.commands.base import CommandAbstract, SubCommandAbstract
+from dotfiles_manager.utils.shell import run
 
 
 class CommandDnf(SubCommandAbstract):

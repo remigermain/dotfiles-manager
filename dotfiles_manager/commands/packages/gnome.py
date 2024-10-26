@@ -1,6 +1,5 @@
-import subprocess
-
-from commands.base import CommandAbstract, SubCommandAbstract
+from dotfiles_manager.commands.base import CommandAbstract, SubCommandAbstract
+from dotfiles_manager.utils.shell import run
 
 
 class CommandGnome(SubCommandAbstract):
@@ -11,7 +10,7 @@ class CommandGnome(SubCommandAbstract):
 
         def handle(self, **option):
             self.stdout.write("backup ", self.style.info("gnome extension"), " apps...")
-            res = subprocess.run(["gext", "list", "--only-uuid"], capture_output=True)
+            res = run(["gext", "list", "--only-uuid"], capture_output=True)
             if not res:
                 return self.stderr.error("invalid response from gnome_extension_cli")
 
@@ -28,6 +27,6 @@ class CommandGnome(SubCommandAbstract):
             if not pkgs:
                 return
 
-            res = subprocess.run(["gext", "install", *pkgs])
+            res = run(["gext", "install", *pkgs])
             if not res:
                 return self.stderr.error("invalid response from gnome_extension_cli")

@@ -1,10 +1,9 @@
 import argparse
 import json
 
-from utils.commands import require_config, require_rc
-from utils.utils import cast
-
-from .base import CommandAbstract, SubCommandAbstract
+from dotfiles_manager.commands.base import CommandAbstract, SubCommandAbstract
+from dotfiles_manager.utils.commands import require_config, require_rc
+from dotfiles_manager.utils.utils import cast
 
 
 @require_rc(False)
@@ -60,7 +59,7 @@ class CommandProfil(SubCommandAbstract):
             for idx, (profil, settings) in enumerate(profiles.items()):
                 used = ""
                 if profil == usedprofil:
-                    used = f" <- {self.style.warning("used")}"
+                    used = f" <- {self.style.warning('used')}"
 
                 self.stdout.write(f"[{self.style.info(profil)}]{used}")
 

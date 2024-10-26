@@ -39,16 +39,20 @@ class FsScope:
 
     def chmod(self, source, mod):
         run(["chmod", oct(mod).replace("0o", ""), str(source)])
+    
+    def is_dir(self, source):
+        r = run([f"[ -d \"{source}\" ] && echo true || echo false"], err=True).stdout.lower()
+        return r == "true"
 
     def copy(self, source, dest):
         source = Path(source)
         dest = Path(dest)
         self.mkdir(dest.parent)
         self.remove(dest)
-        if source.is_dir():
-            run(["cp", "-r", str(source), str(dest)])
-        else:
-            run(["cp", str(source), str(dest)])
+        # if self.is_dir(source):
+        run(["cp", "-rf", str(source), str(dest)])
+        # else:
+        #     run(["cp", str(source), str(dest)])
 
     def link(self, source, dest) -> bool:
         source = Path(source).expanduser()
@@ -143,6 +147,11 @@ class ConfigScope:
         self._local_config = config.setdefault(self.name, {})
         self._base = config.path
         self.fs = FsScope(self._base, self.name)
+        self.path.mkdir(exist_ok=True, parents=True)
+
+    @property
+    def path(self):
+        return self.fs.lpath("")
 
     def get(self, key, *ar) -> Any:
         if key not in self._local_config:
@@ -168,9 +177,10 @@ class Config(dict):
         self._path = Path(path).expanduser().resolve()
         data = {"data": "./data"}
         if self._path.exists():
-            data = json.loads(self._path.read_text())
+            data = data | json.loads(self._path.read_text())
         self.fs = FsScope(self._path, "")
         super().__init__(data)
+        self.path.parent.mkdir(exist_ok=True, parents=True)
 
     @property
     def path(self) -> Path:

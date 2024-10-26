@@ -4,7 +4,7 @@ from fnmatch import fnmatch
 from pathlib import Path
 from typing import Optional
 
-from .base import CommandAbstract, SubCommandAbstract
+from dotfiles_manager.commands.base import CommandAbstract, SubCommandAbstract
 
 
 class CommandScript(SubCommandAbstract):
@@ -14,7 +14,7 @@ class CommandScript(SubCommandAbstract):
         help = "run script by command"
 
         def add_arguments(self, parser: argparse.ArgumentParser):
-            choices = self.config.get("commands", {}).keys()
+            choices = [directory.name for directory in self.config.path.iterdir()]
             parser.add_argument("script_command", help="name to run script command", choices=choices)
 
             parser.add_argument(
@@ -26,8 +26,7 @@ class CommandScript(SubCommandAbstract):
         def handle(
             self, script_command: str, ignores: list[str], match: bool, scripts_name: Optional[str] = None, **options
         ):
-            commands = self.config.get("commands", {})
-            scripts = commands.get(script_command, [])
+            scripts = list((self.config.path / script_command).glob("*"))
             scripts = self.matchs(scripts, scripts_name, ignores, match)
 
             if not scripts:
@@ -36,7 +35,6 @@ class CommandScript(SubCommandAbstract):
 
             self.stdout.write(f"[{self.style.info(script_command)}]")
             for script in scripts:
-                script = self.config.fs.lpath(Path(script_command) / script)
                 self.stdout.write("run ", self.style.info(script.name))
                 try:
                     subprocess.run([str(script)], check=True)
@@ -68,10 +66,11 @@ class CommandScript(SubCommandAbstract):
         aliases = ("ls",)
 
         def handle(self, **options):
-            for command, scripts in self.config.get("commands", {}).items():
+            choices = [directory.name for directory in self.config.path.iterdir()]
+            for command in choices:
                 self.stdout.write(f"[{self.style.info(command)}]")
-                for script in scripts:
-                    self.stdout.write(" - ", self.style.info(script))
+                for script in list((self.config.path / command).glob("*")):
+                    self.stdout.write(" - ", self.style.info(script.name))
 
     class Add(CommandAbstract):
         help = "add script for command"
@@ -81,8 +80,7 @@ class CommandScript(SubCommandAbstract):
             parser.add_argument("scripts", nargs="+", help="scripts to add")
 
         def handle(self, script_command: str, scripts: list[str], **options):
-            commands = self.config.get("commands", {})
-            list_scripts = commands.setdefault(script_command, [])
+            list_scripts = [s.name for s in (self.config.path / script_command).glob("*")]
 
             self.stdout.write("[", self.style.info(script_command), "]")
             for script in scripts:
@@ -97,6 +95,3 @@ class CommandScript(SubCommandAbstract):
                 self.config.fs.chmod(dest, 0o774)
                 self.stdout.write("add ", self.style.info(script.name))
                 list_scripts.append(script.name)
-
-            commands[script_command] = set(list_scripts)
-            self.config.set("commands", commands)

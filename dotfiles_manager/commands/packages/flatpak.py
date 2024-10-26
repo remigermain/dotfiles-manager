@@ -1,7 +1,7 @@
 import argparse
-import subprocess
 
-from commands.base import CommandAbstract, SubCommandAbstract
+from dotfiles_manager.commands.base import CommandAbstract, SubCommandAbstract
+from dotfiles_manager.utils.shell import run
 
 
 class CommandFlatpak(SubCommandAbstract):
@@ -12,7 +12,7 @@ class CommandFlatpak(SubCommandAbstract):
 
         def handle(self, **option):
             self.stdout.write("backup ", self.style.info("flatpak"), " apps...")
-            res = subprocess.run(["flatpak", "list", "--app", "--columns=application"], capture_output=True)
+            res = run(["flatpak", "list", "--app", "--columns=application"], capture_output=True)
             if not res:
                 return self.stderr.error("invalid response from flatpak")
 
@@ -29,6 +29,6 @@ class CommandFlatpak(SubCommandAbstract):
         def handle(self, **option):
             self.stdout.write("update ", self.style.info("flatpak"), " apps...")
             pkgs = self.config.get("packages", [])
-            res = subprocess.run(["flatpak", "install", "--or-update", *pkgs])
+            res = run(["flatpak", "install", "--or-update", *pkgs])
             if not res:
                 return self.stderr.error("invalid response from flatpak")

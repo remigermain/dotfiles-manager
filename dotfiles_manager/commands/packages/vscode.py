@@ -1,13 +1,13 @@
-import subprocess
 from typing import Optional
 
-from commands.base import CommandAbstract, SubCommandAbstract
+from dotfiles_manager.commands.base import CommandAbstract, SubCommandAbstract
+from dotfiles_manager.utils.shell import run
 
 
 def bincode() -> Optional[str]:
-    if subprocess.run(["which", "code"], capture_output=True).returncode == 0:
+    if run(["which", "code"], capture_output=True).returncode == 0:
         return "code"
-    if subprocess.run(["which", "codium"], capture_output=True).returncode == 0:
+    if run(["which", "codium"], capture_output=True).returncode == 0:
         return "codium"
     return
 
@@ -24,7 +24,7 @@ class CommandVSCode(SubCommandAbstract):
                 return
 
             self.stdout.write("backup ", self.style.info(code), " apps...")
-            res = subprocess.run([code, "--list-extensions"], capture_output=True)
+            res = run([code, "--list-extensions"], capture_output=True)
             if not res:
                 self.stderr.error(f"Invalid response from {code}")
 
@@ -55,4 +55,4 @@ class CommandVSCode(SubCommandAbstract):
                 cmds.extend(("--install-extension", pkg))
 
             self.stdout.write("update ", self.style.info(code), " apps...")
-            subprocess.run(cmds)
+            run(cmds)

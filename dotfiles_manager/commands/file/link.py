@@ -1,14 +1,15 @@
 import argparse
+import stat
 from pathlib import Path
 
-from commands.base import CommandAbstract, SubCommandAbstract
-from utils.utils import remove_list
+from dotfiles_manager.commands.base import CommandAbstract, SubCommandAbstract
+from dotfiles_manager.utils.utils import remove_list
 
 
 class CommandLink(SubCommandAbstract):
     help = "synlik file"
     aliases = ("ln",)
-    abstract = True
+    parent = "file"
 
     class Add(CommandAbstract):
         help = "add link file"
@@ -19,12 +20,14 @@ class CommandLink(SubCommandAbstract):
         def handle(self, files: list[str], **option):
             files_config = self.config.get("link", [])
             for file in files:
+                file = Path(file).expanduser().absolute()
                 for actual, _ in files_config:
                     actual = Path(actual)
                     if actual == file:
                         self.stdout.write("file ", self.style.info(file), " already exists...")
                         break
                 else:
+                    file = file.resolve()
                     if self.config.fs.is_system_path(file):
                         if not self.stdout.warning.accept("symlink a file to your system can be break it?"):
                             continue
@@ -47,6 +50,7 @@ class CommandLink(SubCommandAbstract):
         def handle(self, files, no_remove, **option):
             files_config = self.config.get("link", [])
             for file in files:
+                file = Path(file).expanduser().absolute()
                 for element in files_config:
                     actual = Path(element[0])
                     if actual == file:
@@ -70,8 +74,15 @@ class CommandLink(SubCommandAbstract):
         def handle(self, **option):
             files = self.config.get("link", [])
             for source, dest in files:
-                dest = self.config.fs.lpath(dest)
-                self.stdout.write(source, self.style.info(self.style.bold(" -> ")), str(dest))
+                statsource = Path(source).expanduser().absolute().stat()
+
+                ftype = "."
+                if stat.S_ISDIR(statsource.st_mode):
+                    ftype = "d"
+                elif stat.S_ISREG(statsource.st_mode):
+                    ftype = "f"
+                # dest = self.config.fs.lpath(dest)
+                self.stdout.write(f"{ftype} ", source, self.style.info(self.style.bold(" -> ")), str(dest))
 
     class Update(CommandAbstract):
         help = "update link files"

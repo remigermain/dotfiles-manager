@@ -1,5 +1,6 @@
 import argparse
 import importlib
+import importlib.util
 import inspect
 from functools import partial
 from pathlib import Path
@@ -10,30 +11,22 @@ from .config import config_exists, rc_exists
 BASE = Path(__file__).parent.parent
 
 
-def generate_path(path):
-    module = [path.name.split(".")[0]]
-    path = path.parent
-    while BASE != path:
-        module.insert(0, path.name)
-        path = path.parent
-    return ".".join(module)
-
 
 satus_rc_exists = rc_exists()
 status_config_exists = config_exists()
 
 
 def list_commands():
-    from commands.base import CommandAbstract
+    from dotfiles_manager.commands.base import CommandAbstract
 
     cmds = []
     for path in BASE.glob("commands/**/*.py"):
-        module_name = generate_path(path)
-        # import modules from basename
-        module = importlib.import_module(module_name)
+        spec = importlib.util.spec_from_file_location("dotfiles_manager.commands", path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
 
         # get only modules defined
-        def predicate(symbol, module_name=module_name):
+        def predicate(symbol, module_name=module.__name__):
             if (
                 not inspect.isclass(symbol)
                 or symbol.__module__ != module_name
