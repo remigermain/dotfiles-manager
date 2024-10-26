@@ -14,9 +14,9 @@ class CommandGnome(SubCommandAbstract):
             if not res:
                 return self.stderr.error("invalid response from gnome_extension_cli")
 
-            packages = [e.strip() for e in res.stdout.strip().split("\n")]
+            packages = {e.strip() for e in res.stdout.strip().split("\n")}
 
-            self.config.set("packages", packages)
+            self.config.set("packages", sorted(packages))
 
     class Update(CommandAbstract):
         help = "update all installed packages"

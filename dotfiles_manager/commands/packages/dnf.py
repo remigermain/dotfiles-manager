@@ -16,9 +16,9 @@ class CommandDnf(SubCommandAbstract):
             if not res:
                 return self.stderr.error("invalid response from dnf")
 
-            packages = [e.strip().split(":")[0].strip() for e in res.stdout.strip().split("\n")]
+            packages = {e.strip().split(":")[0].strip() for e in res.stdout.strip().split("\n")}
 
-            self.config.set("packages", packages)
+            self.config.set("packages", sorted(packages))
 
     class Update(CommandAbstract):
         help = "update all installed packages"

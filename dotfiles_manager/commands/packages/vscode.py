@@ -28,9 +28,9 @@ class CommandVSCode(SubCommandAbstract):
             if not res:
                 return self.stderr.error(f"Invalid response from {code}")
 
-            packages = [e.strip() for e in res.stdout.strip().split("\n")]
+            packages = {e.strip() for e in res.stdout.strip().split("\n")}
 
-            self.config.set("packages", list(set(packages)))
+            self.config.set("packages", sorted(packages))
 
     class Update(CommandAbstract):
         help = "update all installed packages"
