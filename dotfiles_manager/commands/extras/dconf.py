@@ -80,12 +80,12 @@ class CommandDconf(SubCommandAbstract):
 
         def add_arguments(self, parser: argparse.ArgumentParser):
             parser.add_argument("section", help="ignore sections")
-            parser.add_argument("key", nargs="+", help="ignore keys")
+            parser.add_argument("keys", nargs="+", help="ignore keys")
 
         def handle(self, section, keys, **options):
             ik = self.config.get("ingore-keys", {})
             ackey = ik.setdefault(section, [])
-            ackey.extends(keys)
+            ackey.extend(keys)
             ik[section] = sorted(set(ackey))
             self.config.set("ingore-keys", ik)
 

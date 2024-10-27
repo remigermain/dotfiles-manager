@@ -7,18 +7,21 @@ SPACE = re.compile(r"\s")
 
 
 @wraps(subprocess.run)
-def run(cmds, sudo=True, showerror=True, **kw):
+def run(cmds, sudo=True, space=True, showerror=True, **kw):
     kw.setdefault("text", True)
     kw.setdefault("shell", True)
     kw.setdefault("capture_output", True)
 
     # escape space with string
-    newcmds = []
-    for cm in cmds:
-        if SPACE.search(cm):
-            cm = cm.replace('"', '\\"')
-            cm = f'"{cm}"'
-        newcmds.append(cm)
+    if space:
+        newcmds = []
+        for cm in cmds:
+            if SPACE.search(cm):
+                cm = cm.replace('"', '\\"')
+                cm = f'"{cm}"'
+            newcmds.append(cm)
+    else:
+        newcmds = cmds
 
     cmds_str = " ".join(newcmds)
     sudo_cmds_str = " ".join(["sudo"] + newcmds)
