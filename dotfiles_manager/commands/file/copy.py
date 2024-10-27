@@ -79,7 +79,7 @@ class CommandCopy(SubCommandAbstract):
                 elif stat.S_ISREG(statsource.st_mode):
                     ftype = "f"
 
-                self.stdout.write(f"{ftype} ", source, self.style.info(self.style.bold(" -> ")), str(dest))
+                self.stdout.write(f"{ftype} ", self.style.info(source))
 
     class Update(CommandAbstract):
         help = "update files"

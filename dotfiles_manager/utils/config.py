@@ -66,7 +66,6 @@ class FsScope:
     def remove(self, source: Path):
         """source is host"""
         source = Path(source).expanduser()
-        # if self.exist(source):
         run(["rm", "-rf", str(source)])
 
     def exist(self, source) -> bool:

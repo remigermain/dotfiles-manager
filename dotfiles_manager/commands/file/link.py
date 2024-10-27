@@ -73,7 +73,7 @@ class CommandLink(SubCommandAbstract):
 
         def handle(self, **option):
             files = self.config.get("link", [])
-            for source, dest in files:
+            for source, _ in files:
                 statsource = Path(source).expanduser().absolute().stat()
 
                 ftype = "."
@@ -81,8 +81,7 @@ class CommandLink(SubCommandAbstract):
                     ftype = "d"
                 elif stat.S_ISREG(statsource.st_mode):
                     ftype = "f"
-                # dest = self.config.fs.lpath(dest)
-                self.stdout.write(f"{ftype} ", source, self.style.info(self.style.bold(" -> ")), str(dest))
+                self.stdout.write(f"{ftype} ", "->", self.style.info(source))
 
     class Update(CommandAbstract):
         help = "update link files"
