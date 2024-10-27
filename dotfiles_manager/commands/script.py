@@ -4,7 +4,7 @@ from fnmatch import fnmatch
 from pathlib import Path
 from typing import Optional
 
-from dotfiles_manager.commands.base import CommandAbstract, SubCommandAbstract
+from dotfiles_manager.commands.base import CommandAbstract, SubCommandAbstract, command
 from dotfiles_manager.utils.shell import run
 
 
@@ -62,23 +62,18 @@ class CommandScript(SubCommandAbstract):
 
             return filterd
 
-    class List(CommandAbstract):
-        help = "list all installed scripts"
-        aliases = ("ls",)
+    @command(help="list all installed scripts", aliases=("ls",))
+    def list(self, **options):
+        choices = [directory.name for directory in self.config.path.iterdir()]
+        for choice in choices:
+            self.stdout.write(f"[{self.style.info(choice)}]")
+            for script in list((self.config.path / choice).glob("*")):
+                self.stdout.write(" - ", self.style.info(script.name))
 
-        def handle(self, **options):
-            choices = [directory.name for directory in self.config.path.iterdir()]
-            for command in choices:
-                self.stdout.write(f"[{self.style.info(command)}]")
-                for script in list((self.config.path / command).glob("*")):
-                    self.stdout.write(" - ", self.style.info(script.name))
-
-    class Chmod(CommandAbstract):
-        help = "chmod all installed scripts"
-
-        def handle(self, **options):
-            if not run(["chmod", "-R", "+x", str(self.config.path)]):
-                return self.stderr.error("can't chmod directory")
+    @command(help="chmod all installed scripts")
+    def chmod(self, **options):
+        if not run(["chmod", "-R", "+x", str(self.config.path)]):
+            return self.stderr.error("can't chmod directory")
 
     class Add(CommandAbstract):
         help = "add script for command"

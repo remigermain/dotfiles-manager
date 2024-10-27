@@ -61,7 +61,7 @@ class CommandAbstract(metaclass=CommandType):
 
 def command(func=None, /, name=None, help=None, aliases=None):
     if func is None:
-        return partial(command, name=name, help=help)
+        return partial(command, name=name, help=help, aliases=aliases)
 
     class CommandWrapppers(CommandAbstract):
         def __init__(self, parent):

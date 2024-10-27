@@ -4,7 +4,7 @@ import fnmatch
 import io
 from tempfile import NamedTemporaryFile
 
-from dotfiles_manager.commands.base import CommandAbstract, SubCommandAbstract
+from dotfiles_manager.commands.base import CommandAbstract, SubCommandAbstract, command
 from dotfiles_manager.utils.shell import run
 from dotfiles_manager.utils.utils import remove_list
 
@@ -12,50 +12,58 @@ from dotfiles_manager.utils.utils import remove_list
 class CommandDconf(SubCommandAbstract):
     help = "dconf integration"
 
-    class Backup(CommandAbstract):
-        help = "backup dconf"
+    @command(help="backup dconf")
+    def handle(self, **option):
+        self.stdout.write("backup ", self.style.info("dconf"), " settings...")
 
-        def handle(self, **option):
-            self.stdout.write("backup ", self.style.info("dconf"), " settings...")
+        res = run(["dconf", "dump", "/"])
+        if not res:
+            return self.stderr.error("invalid response from dconf...")
 
-            res = run(["dconf", "dump", "/"])
-            if not res:
+        with NamedTemporaryFile("w", suffix=".ini") as f:
+            f.write(self._sanitize(self.config, res.stdout))
+            self.config.fs.copy(f.name, self.config.fs.lbase("dconf.ini"))
+
+    def _sanitize(self, config, dconf):
+        file = io.StringIO(dconf)
+
+        ignore_sections = config.get("ingore-sections", [])
+        ignore_keys = config.get("ingore-keys", {})
+
+        config = configparser.ConfigParser()
+        config.read_file(file)
+
+        deleted_sections = []
+        deleted_section_keys = []
+        for pattern in ignore_sections:
+            for section in list(config.sections()):
+                if fnmatch.fnmatch(section, pattern):
+                    deleted_sections.append(section)
+                    del config[section]
+
+        for section, keys in ignore_keys.items():
+            if section not in list(config.sections()):
+                continue
+            info = config[section]
+            for k in keys:
+                if k in info:
+                    deleted_section_keys.append((section, k))
+                    del info[k]
+
+        output = io.StringIO()
+        config.write(output)
+        output.seek(0)
+        return output.read()
+
+    @command(help="load dconf", aliases=("load",))
+    def backup(self, **option):
+        if not self.config.fs.exist(self.config.fs.lbase("dconf.ini")):
+            return self.stdout.write("no config docnf.ini...")
+
+        self.stdout.write("load ", self.style.info("dconf"), " settings...")
+        with self.config.fs.lbase("dconf.ini").open("r") as f:
+            if not run(["dconf", "load", "/"], stdin=f):
                 return self.stderr.error("invalid response from dconf...")
-
-            with NamedTemporaryFile("w", suffix=".ini") as f:
-                f.write(self._sanitize(self.config, res.stdout))
-                self.config.fs.copy(f.name, self.config.fs.lbase("dconf.ini"))
-
-        def _sanitize(self, config, dconf):
-            file = io.StringIO(dconf)
-
-            ignore_sections = config.get("ingore-sections", [])
-            ignore_keys = config.get("ingore-keys", [])
-
-            config = configparser.ConfigParser()
-            config.read_file(file)
-
-            deleted_sections = []
-            deleted_section_keys = []
-            for pattern in ignore_sections:
-                for section in list(config.sections()):
-                    if fnmatch.fnmatch(section, pattern):
-                        deleted_sections.append(section)
-                        del config[section]
-
-            for section, keys in ignore_keys:
-                if section not in list(config.sections()):
-                    continue
-                info = config[section]
-                for k in keys:
-                    if k in info:
-                        deleted_section_keys.append((section, k))
-                        del info[k]
-
-            output = io.StringIO()
-            config.write(output)
-            output.seek(0)
-            return output.read()
 
     class Ignore(CommandAbstract):
         help = "ignore sections"
@@ -65,19 +73,21 @@ class CommandDconf(SubCommandAbstract):
 
         def handle(self, sections, **options):
             sections = set(self.config.get("ingore-sections", [])) | set(sections)
-            self.config.set("ingore-sections", list(sections))
+            self.config.set("ingore-sections", sorted(sections))
 
     class IgnoreKey(CommandAbstract):
         help = "ignore sections keys"
 
         def add_arguments(self, parser: argparse.ArgumentParser):
             parser.add_argument("section", help="ignore sections")
-            parser.add_argument("key", help="ignore keys")
+            parser.add_argument("key", nargs="+", help="ignore keys")
 
-        def handle(self, section, key, **options):
-            ik = self.config.get("ingore-keys", [])
-            ik.append((section, key))
-            self.config.set("ingore-keys", list(ik))
+        def handle(self, section, keys, **options):
+            ik = self.config.get("ingore-keys", {})
+            ackey = ik.setdefault(section, [])
+            ackey.extends(keys)
+            ik[section] = sorted(set(ackey))
+            self.config.set("ingore-keys", ik)
 
     class Remove(CommandAbstract):
         help = "remove sections"
@@ -89,11 +99,10 @@ class CommandDconf(SubCommandAbstract):
 
         def handle(self, section, key=None, **options):
             if key:
-                ik = self.config.get("ingore-keys", [])
-                for element in ik:
-                    k, v = element
-                    if k == section and v == key:
-                        self.config.set("ignore-keys", remove_list(element, ik))
+                ik = self.config.get("ingore-keys", {})
+                for k, v in ik.items():
+                    if k == section and key in v:
+                        self.config.set("ignore-keys", remove_list(v, ik))
                         self.stdout.write(
                             "section ", self.style.info(section), " with key ", self.style.info(key), " removed"
                         )
@@ -108,16 +117,3 @@ class CommandDconf(SubCommandAbstract):
                     self.stderr.write("section ", self.style.info(section), " removed")
             else:
                 self.stderr.write("no found section ", self.style.error(section))
-
-    class Update(CommandAbstract):
-        help = "load dconf"
-        aliases = ("load",)
-
-        def handle(self, **option):
-            if not self.config.fs.exist(self.config.fs.lbase("dconf.ini")):
-                return self.stdout.write("no config docnf.ini...")
-
-            self.stdout.write("load ", self.style.info("dconf"), " settings...")
-            with self.config.fs.lbase("dconf.ini").open("r") as f:
-                if not run(["dconf", "load", "/"], stdin=f):
-                    return self.stderr.error("invalid response from dconf...")
