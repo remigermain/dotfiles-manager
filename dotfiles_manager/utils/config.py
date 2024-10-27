@@ -41,7 +41,7 @@ class FsScope:
         run(["chmod", oct(mod).replace("0o", ""), str(source)])
 
     def is_dir(self, source):
-        r = run([f'[ -d "{source}" ] && echo true || echo false']).stdout.lower().strip()
+        r = run([f'[ -d "{source}" ] && echo true || echo false'], sudo=False).stdout.lower().strip()
         return r == "true"
 
     def copy(self, source, dest):
@@ -70,7 +70,7 @@ class FsScope:
         run(["rm", "-rf", str(source)])
 
     def exist(self, source) -> bool:
-        r = run([f'[ -e "{source}" ] && echo true || echo false']).stdout.lower().strip()
+        r = run([f'[ -e "{source}" ] && echo true || echo false'], sudo=False).stdout.lower().strip()
         return r == "true"
 
     def stat(self, source) -> os.stat_result:

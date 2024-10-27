@@ -21,14 +21,14 @@ class CommandScript(SubCommandAbstract):
             parser.add_argument(
                 "scripts_name", nargs="*", help="run only name script specified (default to all)", default=[]
             )
-            parser.add_argument("--match", action="store_true", default=False, help="any match name")
+            parser.add_argument("--exact", action="store_true", default=False, help="exact match name")
             parser.add_argument("--ignore", nargs="*", dest="ignores", help="ignore scripts", default=[])
 
         def handle(
-            self, script_command: str, ignores: list[str], match: bool, scripts_name: Optional[str] = None, **options
+            self, script_command: str, ignores: list[str], exact: bool, scripts_name: Optional[str] = None, **options
         ):
             scripts = list((self.config.path / script_command).glob("*"))
-            scripts = self.matchs(scripts, scripts_name, ignores, match)
+            scripts = self.matchs(scripts, scripts_name, ignores, exact)
 
             if not scripts:
                 self.stdout.info("no script to run...")
@@ -42,7 +42,7 @@ class CommandScript(SubCommandAbstract):
                 except Exception as e:
                     self.stdout.error(f" {e}")
 
-        def matchs(self, scripts: list[str], pattern: Optional[list[str]], ignores: list[str], match: bool) -> set[str]:
+        def matchs(self, scripts: list[str], pattern: Optional[list[str]], ignores: list[str], exact: bool) -> set[str]:
             filterd = set()
 
             if not pattern:
@@ -50,13 +50,13 @@ class CommandScript(SubCommandAbstract):
 
             for script in scripts:
                 for pat in pattern:
-                    pat = f"*{pat}*" if match else pat
+                    pat = f"*{pat}*" if not exact else pat
                     if fnmatch(script, pat):
                         filterd.add(script)
 
             for script in list(filterd):
                 for pat in ignores:
-                    pat = f"*{pat}*" if match else pat
+                    pat = f"*{pat}*" if not exact else pat
                     if fnmatch(script, pat):
                         filterd.discard(script)
 
