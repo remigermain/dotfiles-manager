@@ -13,7 +13,7 @@ class CommandDconf(SubCommandAbstract):
     help = "dconf integration"
 
     @command(help="backup dconf")
-    def handle(self, **option):
+    def backup(self, **option):
         self.stdout.write("backup ", self.style.info("dconf"), " settings...")
 
         res = run(["dconf", "dump", "/"])
@@ -56,7 +56,7 @@ class CommandDconf(SubCommandAbstract):
         return output.read()
 
     @command(help="load dconf", aliases=("load",))
-    def backup(self, **option):
+    def update(self, **option):
         if not self.config.fs.exist(self.config.fs.lbase("dconf.ini")):
             return self.stdout.write("no config docnf.ini...")
 

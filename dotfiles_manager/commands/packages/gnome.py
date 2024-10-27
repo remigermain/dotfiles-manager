@@ -1,5 +1,4 @@
 import json
-from tempfile import NamedTemporaryFile
 
 from dotfiles_manager.commands.base import SubCommandAbstract, command
 from dotfiles_manager.utils.shell import run

@@ -3,7 +3,6 @@ from tempfile import NamedTemporaryFile
 
 from dotfiles_manager.commands.base import CommandAbstract, SubCommandAbstract, command
 from dotfiles_manager.utils.shell import run
-from dotfiles_manager.utils.utils import cast
 
 
 class CommandMpm(SubCommandAbstract):
@@ -41,6 +40,10 @@ class CommandMpm(SubCommandAbstract):
             cmds.extend(["--force", f.name])
             if not run(cmds, capture_output=False):
                 return self.stderr.error("invalid response from mpm...")
+
+            with open(f.name) as ff:
+                # remove first 3 line of mpm ( timespace, info ...)
+                f.write("".join(ff.readlines()[3:]))
 
             self.config.fs.copy(f.name, self.config.fs.lbase("mpm.toml"))
 

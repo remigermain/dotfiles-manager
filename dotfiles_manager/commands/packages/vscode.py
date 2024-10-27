@@ -43,7 +43,7 @@ class CommandVSCode(SubCommandAbstract):
             if not code or not path.exists():
                 return
 
-            with path.open("w") as f:
+            with path.open() as f:
                 pkgs = json.load(f)
             if not pkgs:
                 return

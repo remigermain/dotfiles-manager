@@ -58,6 +58,7 @@ class FsScope:
         if dest.resolve() == source:
             return False
 
+        self.mkdir(dest.parent)
         self.remove(dest)
         run(["ln", "-s", str(source), str(dest)])
         return True
@@ -65,8 +66,8 @@ class FsScope:
     def remove(self, source: Path):
         """source is host"""
         source = Path(source).expanduser()
-        if self.exist(source):
-            run(["rm", "-rf", str(source)])
+        # if self.exist(source):
+        run(["rm", "-rf", str(source)])
 
     def exist(self, source) -> bool:
         r = run([f'[ -e "{source}" ] && echo true || echo false']).stdout.lower().strip()
@@ -87,7 +88,6 @@ class FsScope:
 
     def mkdir(self, path):
         run(["mkdir", "-p", str(path)])
-        # Path(path).mkdir(exist_ok=True, parents=True)
 
     # --- local ---
     def lbase(self, path):
@@ -148,7 +148,6 @@ class ConfigScope:
         self._local_config = config.setdefault(self.name, {})
         self._base = config.path
         self.fs = FsScope(self._base, self.name)
-        self.path.mkdir(exist_ok=True, parents=True)
 
     @property
     def path(self):
@@ -181,7 +180,7 @@ class Config(dict):
             data = data | json.loads(self._path.read_text())
         self.fs = FsScope(self._path, "")
         super().__init__(data)
-        self.path.parent.mkdir(exist_ok=True, parents=True)
+        self.path.mkdir(exist_ok=True, parents=True)
 
     @property
     def path(self) -> Path:

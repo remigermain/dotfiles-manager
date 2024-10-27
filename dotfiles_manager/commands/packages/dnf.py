@@ -26,9 +26,12 @@ class CommandDnf(SubCommandAbstract):
         path = self.config.fs.lbase("dnf.json")
         if not path.exists():
             return
-        path = self.config.fs.lbase("dnf.conf")
+        path = self.config.fs.lbase("dnf.json")
         with path.open() as f:
             pkgs = json.load(f)
+
+        if not pkgs:
+            return
 
         res = run(["dnf", "--best", "install", *pkgs], capture_output=False)
         if not res:

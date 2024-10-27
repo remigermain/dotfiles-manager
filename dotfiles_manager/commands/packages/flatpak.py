@@ -24,8 +24,13 @@ class CommandFlatpak(SubCommandAbstract):
     def update(self, **option):
         self.stdout.write("update ", self.style.info("flatpak"), " apps...")
 
-        with self.config.fs.lbase("flatpak.json").open("w") as f:
+        if not self.config.fs.lbase("flatpak.json").exists():
+            return
+
+        with self.config.fs.lbase("flatpak.json").open() as f:
             pkgs = json.load(f)
+            if not pkgs:
+                return
             res = run(["flatpak", "install", "--or-update", *pkgs], sudo=False, capture_output=False)
             if not res:
                 return self.stderr.error("invalid response from flatpak")
