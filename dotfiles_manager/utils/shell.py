@@ -2,16 +2,6 @@ import subprocess
 import sys
 from functools import wraps
 
-PAT = ["permission denied", "superuser privileges"]
-
-
-def need_superuser(text):
-    text = text.lower()
-    for match in PAT:
-        if match in text:
-            return True
-    return False
-
 
 @wraps(subprocess.run)
 def run(cmds, sudo=True, showerror=True, **kw):

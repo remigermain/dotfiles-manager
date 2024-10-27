@@ -13,6 +13,9 @@ def main(arguments) -> Optional[int]:
 
     parser.add_argument("--color", action="store_true", help="active output colors", dest="color", default=None)
     parser.add_argument("--no-color", action="store_false", help="remove output colors", dest="color", default=None)
+    parser.add_argument(
+        "-y", "--assumeyes", action="store_true", help="Automatically answer yes for all questions", default=False
+    )
     subparsers = parser.add_subparsers(description="Available commands", dest="MAIN_command", required=True)
 
     coresponds = init_commands(list_commands(), subparsers)
@@ -31,8 +34,10 @@ def main(arguments) -> Optional[int]:
     except KeyboardInterrupt:
         return 100
 
+
 def cli():
     exit(main(sys.argv[1:]))
+
 
 if __name__ == "__main__":
     cli()

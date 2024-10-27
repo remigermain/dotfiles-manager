@@ -2,7 +2,7 @@ import argparse
 import configparser
 import fnmatch
 import io
-import subprocess
+from tempfile import NamedTemporaryFile
 
 from dotfiles_manager.commands.base import CommandAbstract, SubCommandAbstract
 from dotfiles_manager.utils.shell import run
@@ -22,8 +22,9 @@ class CommandDconf(SubCommandAbstract):
             if not res:
                 return self.stderr.error("invalid response from dconf...")
 
-            dconf = self._sanitize(self.config, res.stdout)
-            self.config.set("data", dconf)
+            with NamedTemporaryFile("w", suffix=".ini") as f:
+                f.write(self._sanitize(self.config, res.stdout))
+                self.config.fs.copy(f.name, self.config.fs.lbase("dconf.ini"))
 
         def _sanitize(self, config, dconf):
             file = io.StringIO(dconf)
@@ -110,14 +111,13 @@ class CommandDconf(SubCommandAbstract):
 
     class Update(CommandAbstract):
         help = "load dconf"
-        alias = ("load",)
+        aliases = ("load",)
 
         def handle(self, **option):
-            self.stdout.write("load ", self.style.info("dconf"), " settings...")
-            dconf = self.config.get("data", None)
-            if not dconf:
-                return
+            if not self.config.fs.exist(self.config.fs.lbase("dconf.ini")):
+                return self.stdout.write("no config docnf.ini...")
 
-            stream = io.StringIO(dconf)
-            if not run(["dconf", "load", "/"], stdin=stream):
-                return self.stderr.error("invalid response from dconf...")
+            self.stdout.write("load ", self.style.info("dconf"), " settings...")
+            with self.config.fs.lbase("dconf.ini").open("r") as f:
+                if not run(["dconf", "load", "/"], stdin=f):
+                    return self.stderr.error("invalid response from dconf...")

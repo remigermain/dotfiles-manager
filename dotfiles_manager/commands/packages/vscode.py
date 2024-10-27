@@ -1,6 +1,7 @@
+import json
 from typing import Optional
 
-from dotfiles_manager.commands.base import CommandAbstract, SubCommandAbstract
+from dotfiles_manager.commands.base import CommandAbstract, SubCommandAbstract, command
 from dotfiles_manager.utils.shell import run
 
 
@@ -15,22 +16,20 @@ def bincode() -> Optional[str]:
 class CommandVSCode(SubCommandAbstract):
     help = "vscode/codium integration"
 
-    class Backup(CommandAbstract):
-        help = "backup all installed packages"
+    @command(help="backup all installed packages")
+    def backup(self, **option):
+        code = bincode()
+        if not code:
+            return
 
-        def handle(self, **option):
-            code = bincode()
-            if not code:
-                return
+        self.stdout.write("backup ", self.style.info(code), " apps...")
+        res = run([code, "--list-extensions"], sudo=False)
+        if not res:
+            return self.stderr.error(f"Invalid response from {code}")
 
-            self.stdout.write("backup ", self.style.info(code), " apps...")
-            res = run([code, "--list-extensions"], sudo=False)
-            if not res:
-                return self.stderr.error(f"Invalid response from {code}")
-
-            packages = {e.strip() for e in res.stdout.strip().split("\n")}
-
-            self.config.set("packages", sorted(packages))
+        packages = sorted({e.strip() for e in res.stdout.strip().split("\n")})
+        with self.config.fs.lbase(f"{code}.json").open("w") as f:
+            json.dump(packages, f, indent=4)
 
     class Update(CommandAbstract):
         help = "update all installed packages"
@@ -40,10 +39,12 @@ class CommandVSCode(SubCommandAbstract):
 
         def handle(self, force, **option):
             code = bincode()
-            if not code:
+            path = self.config.fs.lbase(f"{code}.json")
+            if not code or not path.exists():
                 return
 
-            pkgs = self.config.get("packages", [])
+            with path.open("w") as f:
+                pkgs = json.load(f)
             if not pkgs:
                 return
 

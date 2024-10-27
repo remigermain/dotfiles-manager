@@ -2,6 +2,7 @@ import abc
 import argparse
 import inspect
 import sys
+from functools import partial, wraps
 from typing import Optional
 
 from dotfiles_manager.utils.commands import COMMAND_CONFIG, init_commands
@@ -58,6 +59,30 @@ class CommandAbstract(metaclass=CommandType):
         raise NotImplementedError("You need to implement handle()")
 
 
+def command(func=None, /, name=None, help=None, aliases=None):
+    if func is None:
+        return partial(command, name=name, help=help)
+
+    class CommandWrapppers(CommandAbstract):
+        def __init__(self, parent):
+            self.name = name or func.__name__
+            self.help = help
+            self.aliases = aliases or ()
+            super().__init__(parent=parent)
+
+            @wraps(func)
+            def _wrap(*ar, **kw):
+                return self.handle(*ar, **kw)
+
+            setattr(parent, func.__name__, _wrap)
+
+        @wraps(func)
+        def handle(self, *ar, **kw):
+            return func(self._parent, *ar, **kw)
+
+    return CommandWrapppers
+
+
 class SubCommandAbstract(CommandAbstract):
     abstract = True
 
@@ -69,6 +94,7 @@ class SubCommandAbstract(CommandAbstract):
         def predicate(symbol):
             if not inspect.isclass(symbol) or not issubclass(symbol, CommandAbstract) or symbol is type(self):
                 return False
+
             return True
 
         subparsers = parser.add_subparsers(
