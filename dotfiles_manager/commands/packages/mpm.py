@@ -30,22 +30,18 @@ class CommandMpm(SubCommandAbstract):
             return self.stdout.warning("no mangers sets...")
 
         cmds = ["mpm"]
-
-        if assumeyes:
-            cmds.append("-y")
         cmds.extend(f"--{m}" for m in managers)
         cmds.append("backup")
 
         with NamedTemporaryFile("w", suffix=".toml") as f:
             cmds.extend(["--force", f.name])
+
             if not run(cmds, capture_output=False):
                 return self.stderr.error("invalid response from mpm...")
 
-            with open(f.name) as ff:
+            with open(f.name) as toml, self.config.fs.lbase("mpm.toml").open("w") as f:
                 # remove first 3 line of mpm ( timespace, info ...)
-                f.write("".join(ff.readlines()[3:]))
-
-            self.config.fs.copy(f.name, self.config.fs.lbase("mpm.toml"))
+                f.write("".join(toml.readlines()[3:]))
 
     @command(help="update all installed packages")
     def update(self, **option):
