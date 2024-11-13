@@ -10,11 +10,16 @@ class CommandDnf(SubCommandAbstract):
     @command(help="backup all installed packages")
     def backup(self, **option):
         self.stdout.write("backup ", self.style.info("dnf"), " apps...")
-        res = run(["dnf", "repoquery", "--userinstalled", "--qf", "%{name}"])
+        res = run(["dnf", "repoquery", "--userinstalled", "--qf", "%{name}\n"])
         if not res:
             return self.stderr.error("invalid response from dnf")
 
-        packages = sorted({e.strip().split(":")[0].strip() for e in res.stdout.strip().split("\n")})
+        packages = sorted(
+            {
+                e.strip().split(":")[0].strip()
+                for e in res.stdout.strip().split("\n")
+            }
+        )
 
         with self.config.fs.lbase("dnf.json").open("w") as f:
             json.dump(packages, f, indent=4)
