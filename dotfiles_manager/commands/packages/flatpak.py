@@ -34,7 +34,7 @@ class CommandFlatpak(SubCommandAbstract):
             if not pkgs:
                 return
             res = run(
-                ["flatpak", "install", "--or-update", *pkgs],
+                ["flatpak", "install", "-y", "--or-update", *pkgs],
                 sudo=False,
                 capture_output=False,
             )

@@ -24,12 +24,12 @@ class CommandGnome(SubCommandAbstract):
     def update(self, **option):
         self.stdout.write("update ", self.style.info("gnome extension"), " apps...")
 
-        path = self.config.fs.lbase("gnome.txt")
+        path = self.config.fs.lbase("gnome.json")
         if not self.config.fs.exist(path):
             return
 
         with path.open("r") as f:
-            pkgs = f.readlines()
+            pkgs = json.load(f)
             res = run(["gext", "install", *pkgs], capture_output=False)
             if not res:
                 return self.stderr.error("invalid response from gnome_extension_cli")
