@@ -27,7 +27,7 @@ class CommandVSCode(SubCommandAbstract):
         if not res:
             return self.stderr.error(f"Invalid response from {code}")
 
-        packages = sorted({e.strip() for e in res.stdout.strip().split("\n")})
+        packages = sorted({e.strip() for e in res.stdout.strip().split("\n") if e.strip()})
         with self.config.fs.lbase(f"{code}.json").open("w") as f:
             json.dump(packages, f, indent=4)
 
