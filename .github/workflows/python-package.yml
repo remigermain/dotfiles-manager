@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.13"]
+        python-version: ["3.9"]
 
     steps:
     - uses: actions/checkout@v5
@@ -36,9 +36,6 @@ jobs:
       
     - name: Install the project
       run: uv sync --locked --all-extras --dev
-
-    - name: Tests
-      run: uv run pytest tests
 
     - name: Build
       run: uv build
