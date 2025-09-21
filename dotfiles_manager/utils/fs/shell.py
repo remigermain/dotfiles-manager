@@ -1,7 +1,7 @@
-import pathlib
-import subprocess
 import abc
 import io
+import pathlib
+import subprocess
 import tempfile
 
 
@@ -48,16 +48,8 @@ class Shell(InterfaceFS):
         if self._root:
             cmds.insert(0, "sudo")
 
-        # TODO remove this
-        # if ">>" not in cmds and "cat" in cmds:
-        print(cmds)
         result = subprocess.run(cmds, **kw)
-        try:
-            result.check_returncode()
-            # raise ValueError("")
-        except Exception as e:
-            print(result.stderr)
-            raise
+        result.check_returncode()
         return result
 
     def mkdir(self, path: pathlib.Path):

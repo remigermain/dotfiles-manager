@@ -1,4 +1,5 @@
 import subprocess
+
 from dotfiles_manager.utils.config import BASE_DOTFILE
 
 

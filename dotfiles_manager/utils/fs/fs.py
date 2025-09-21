@@ -1,20 +1,19 @@
-import pathlib
-import os
-from dotfiles_manager.utils.style import style
-import shutil
 import enum
+import mimetypes
+import os
+import pathlib
+
 from dotfiles_manager.utils.config import (
-    OUTPUT_HOME,
     OUTPUT_DOTFILE_HOME_COPY,
     OUTPUT_DOTFILE_HOME_LINK,
     OUTPUT_DOTFILE_SYSTEM_COPY,
     OUTPUT_DOTFILE_SYSTEM_LINK,
+    OUTPUT_HOME,
 )
-import sys
 from dotfiles_manager.utils.exception import InvalidDotfile, PermissionDotfile
+from dotfiles_manager.utils.fs.shell import InterfaceFS
+from dotfiles_manager.utils.style import style
 from dotfiles_manager.utils.template import template_file
-from dotfiles_manager.utils.fs.shell import Shell, InterfaceFS
-import mimetypes
 
 
 def permission_safe(func):
@@ -22,7 +21,7 @@ def permission_safe(func):
         try:
             return func(*ar, **kw)
         except PermissionError as e:
-            raise PermissionDotfile(f"Permission denied: {e}")
+            raise PermissionDotfile(f"Permission denied: {e}") from e
 
     return _wraps
 
@@ -117,7 +116,8 @@ class Symlink(DotfileFS):
             # same follow
             if self.dest.resolve() == self.src:
                 print(
-                    f"symlink already exists'{style.info(str(self.dest))}', ignore..."
+                    f"symlink already exists'{style.info(str(self.dest))}', \
+                        ignore..."
                 )
                 return
             if flags.n:
@@ -126,7 +126,8 @@ class Symlink(DotfileFS):
             if not flags.y and self.force_yes is not True:
                 if (
                     input(
-                        f"'{style.info(str(self.dest))}' already exists, remove it ? [y/n]\n"
+                        f"'{style.info(str(self.dest))}' already exists, \
+                            remove it ? [y/n]\n"
                     )
                     .strip()
                     .lower()

@@ -1,7 +1,7 @@
-from os import read
+import json
+
 import jinja2
 from jinja2 import Undefined
-import json
 
 
 class SilentUndefined(Undefined):

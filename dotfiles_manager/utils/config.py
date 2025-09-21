@@ -1,7 +1,6 @@
+import os
 import pathlib
 import sys
-import os
-
 
 OUTPUT_HOME = pathlib.Path("~/").expanduser()
 OUTPUT_SYSTEM = pathlib.Path("/").expanduser()

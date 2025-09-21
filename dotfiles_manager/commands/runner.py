@@ -1,10 +1,8 @@
-from dotfiles_manager.utils.fs.fs import DotfileFS
-from typing import Generator
-from dotfiles_manager.utils.exception import InvalidDotfile, PermissionDotfile
 import sys
-import subprocess
-import os
-import pathlib
+from collections.abc import Generator
+
+from dotfiles_manager.utils.exception import InvalidDotfile, PermissionDotfile
+from dotfiles_manager.utils.fs.fs import DotfileFS
 from dotfiles_manager.utils.fs.shell import Shell
 
 
@@ -19,7 +17,7 @@ def runner(generator: Generator[DotfileFS], flags):
         except InvalidDotfile as e:
             print(str(e), file=sys.stderr)
             as_error = True
-        except PermissionDotfile as e:
+        except PermissionDotfile:
             need_sudo.append(el)
 
     if as_error:

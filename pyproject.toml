@@ -1,9 +1,10 @@
 [project]
 name = "dotfiles-manager"
-version = "0.1.0"
-description = "Add your description here"
+version = "0.0.1"
+description = "dotfiles link/copy manager"
 readme = "README.md"
 requires-python = ">=3.9"
+
 dependencies = [
     "jinja2>=3.1.6",
 ]
@@ -11,3 +12,8 @@ dependencies = [
 [project.scripts]
 dotfiles-manager = "dotfiles_manager:cli"
 dm = "dotfiles_manager:cli"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2",
+]

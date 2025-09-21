@@ -1,10 +1,11 @@
-from typing import Generator
+from collections.abc import Generator
+
 from dotfiles_manager.utils.fs.fs import (
     Copy,
     DotfileFS,
-    sanitize_source_path,
     EnumFile,
     File,
+    sanitize_source_path,
 )
 
 

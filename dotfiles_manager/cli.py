@@ -1,20 +1,17 @@
 #!/usr/bin/env python3
 import argparse
 import sys
-from dotfiles_manager.utils.style import style
 
+from dotfiles_manager.commands.copy import copy_command
 from dotfiles_manager.commands.extra import backup_command, refresh_command
 from dotfiles_manager.commands.init import (
     init_command,
-    init_link_command,
     init_copy_command,
+    init_link_command,
 )
-from dotfiles_manager.commands.symlink import link_command, unlink_command
-
-from dotfiles_manager.commands.copy import copy_command
-
 from dotfiles_manager.commands.runner import runner
-
+from dotfiles_manager.commands.symlink import link_command, unlink_command
+from dotfiles_manager.utils.style import style
 
 type = argparse.FileType()
 

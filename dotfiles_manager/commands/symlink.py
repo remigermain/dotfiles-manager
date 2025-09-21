@@ -1,13 +1,13 @@
-from typing import Generator
-import sys
+from collections.abc import Generator
+
 from dotfiles_manager.utils.fs.fs import (
     Copy,
-    DotfileFS,
-    Symlink,
-    File,
     Delete,
-    sanitize_source_path,
+    DotfileFS,
     EnumFile,
+    File,
+    Symlink,
+    sanitize_source_path,
 )
 
 

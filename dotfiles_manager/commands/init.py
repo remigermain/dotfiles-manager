@@ -1,16 +1,16 @@
-from os import path
 import pathlib
-from typing import Generator, TypeVar
-from dotfiles_manager.utils.config import (
-    OUTPUT_DOTFILE_HOME_LINK,
-    OUTPUT_DOTFILE_SYSTEM_LINK,
-    OUTPUT_DOTFILE_SYSTEM_COPY,
-    OUTPUT_SYSTEM,
-    OUTPUT_DOTFILE_HOME_COPY,
-    OUTPUT_HOME,
-)
-from dotfiles_manager.utils.fs.fs import Symlink, Copy, FileTemplate
+from collections.abc import Generator
 from itertools import chain
+
+from dotfiles_manager.utils.config import (
+    OUTPUT_DOTFILE_HOME_COPY,
+    OUTPUT_DOTFILE_HOME_LINK,
+    OUTPUT_DOTFILE_SYSTEM_COPY,
+    OUTPUT_DOTFILE_SYSTEM_LINK,
+    OUTPUT_HOME,
+    OUTPUT_SYSTEM,
+)
+from dotfiles_manager.utils.fs.fs import Copy, FileTemplate, Symlink
 
 
 def removeprefix(path: pathlib.Path, out_base: pathlib.Path) -> pathlib.Path:
