@@ -1,26 +1,68 @@
-import argparse
-from pathlib import Path
+from os import path
+import pathlib
+from typing import Generator, TypeVar
+from dotfiles_manager.utils.config import (
+    OUTPUT_DOTFILE_HOME_LINK,
+    OUTPUT_DOTFILE_SYSTEM_LINK,
+    OUTPUT_DOTFILE_SYSTEM_COPY,
+    OUTPUT_SYSTEM,
+    OUTPUT_DOTFILE_HOME_COPY,
+    OUTPUT_HOME,
+)
+from dotfiles_manager.utils.fs.fs import Symlink, Copy, FileTemplate
+from itertools import chain
 
-from dotfiles_manager.commands.base import CommandAbstract
-from dotfiles_manager.utils.commands import require_config, require_rc
-from dotfiles_manager.utils.config import DEFAULT_PROFILE
+
+def removeprefix(path: pathlib.Path, out_base: pathlib.Path) -> pathlib.Path:
+    return pathlib.Path(str(path).removeprefix(str(out_base) + "/"))
 
 
-@require_rc(False)
-@require_config(False)
-class CommandInit(CommandAbstract):
-    help = "initialise dotfile"
+def init_sub_command(
+    src_path: pathlib.Path, dest_path: pathlib.Path
+) -> Generator[(pathlib.Path, pathlib.Path)]:
+    force_folders = [p.parent for p in src_path.glob("**/.dot-folder")]
+    already_generate = set()
 
-    def add_arguments(self, parser: argparse.ArgumentParser):
-        parser.add_argument("configpath", type=Path, help="where to initiliase repo")
-        parser.add_argument("profile", nargs="?", default=DEFAULT_PROFILE, help="profile")
+    for source_file in src_path.glob("**"):
+        # ignore folders
+        if not source_file.is_file():
+            continue
 
-    def handle(self, configpath: Path, profile, **options):
-        configpath = configpath.expanduser().resolve()
-        if profile in self.rc["profiles"]:
-            if not self.stdout.write.accept("profiles ", self.style.info(profile), " already exists, continue?"):
-                return
+        for source_folder in force_folders:
+            if str(source_file).startswith(str(source_folder)):
+                if str(source_folder) not in already_generate:
+                    already_generate.add(str(source_folder))
+                    dest = dest_path / removeprefix(source_folder, src_path)
+                    yield source_folder, dest
+                break
+        else:
+            dest = dest_path / removeprefix(source_file, src_path)
+            yield source_file, dest
 
-        self.rc["profiles"][profile] = {"directory": str(configpath)}
-        self.stdout.write(f"profil {self.style.info(profile)} added to {configpath}")
-        self.rc.save()
+
+def init_link_command(flags) -> Generator[Symlink]:
+    gen = []
+    if flags.only in (None, "home"):
+        gen.append(init_sub_command(OUTPUT_DOTFILE_HOME_LINK, OUTPUT_HOME))
+    if flags.only in (None, "system"):
+        gen.append(init_sub_command(OUTPUT_DOTFILE_SYSTEM_LINK, OUTPUT_SYSTEM))
+
+    for src, dest in chain(*gen):
+        yield Symlink(src, dest)
+
+
+def init_copy_command(flags) -> Generator[Copy]:
+    gen = []
+    print(flags)
+    if flags.only in (None, "home"):
+        gen.append(init_sub_command(OUTPUT_DOTFILE_HOME_COPY, OUTPUT_HOME))
+    if flags.only in (None, "system"):
+        gen.append(init_sub_command(OUTPUT_DOTFILE_SYSTEM_COPY, OUTPUT_SYSTEM))
+
+    for src, dest in chain(*gen):
+        yield Copy(src, dest) + FileTemplate(dest)
+
+
+def init_command(flags) -> Generator[Symlink | Copy]:
+    yield from init_link_command()
+    yield from init_copy_command()
