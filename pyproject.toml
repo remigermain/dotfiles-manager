@@ -1,5 +1,5 @@
 [project]
-name = "dotfiles-manager"
+name = "manager-dotfiles"
 version = "0.0.1"
 description = "dotfiles link/copy manager"
 readme = "README.md"
