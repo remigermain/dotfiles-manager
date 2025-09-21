@@ -17,3 +17,6 @@ dm = "dotfiles_manager:cli"
 dev = [
     "pytest>=8.4.2",
 ]
+
+[tool.uv]
+package = true
