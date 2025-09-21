@@ -1,7 +1,7 @@
 [project]
 name = "manager-dotfiles"
-version = "0.0.1"
-description = "dotfiles link/copy manager"
+version = "0.0.2"
+description = "dotfiles manager for link/copy files, and run backup/refresh scripts"
 readme = "README.md"
 requires-python = ">=3.9"
 
