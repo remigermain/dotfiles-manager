@@ -120,7 +120,7 @@ def main():
 
 
 def cli():
-    exit(main(sys.argv[1:]))
+    exit(main())
 
 
 if __name__ == "__main__":

@@ -116,8 +116,7 @@ class Symlink(DotfileFS):
             # same follow
             if self.dest.resolve() == self.src:
                 print(
-                    f"symlink already exists'{style.info(str(self.dest))}', \
-                        ignore..."
+                    f"symlink already exists'{style.info(str(self.dest))}', ignore..."
                 )
                 return
             if flags.n:
@@ -126,8 +125,7 @@ class Symlink(DotfileFS):
             if not flags.y and self.force_yes is not True:
                 if (
                     input(
-                        f"'{style.info(str(self.dest))}' already exists, \
-                            remove it ? [y/n]\n"
+                        f"'{style.info(str(self.dest))}' already exists, remove it ? [y/n]\n"
                     )
                     .strip()
                     .lower()

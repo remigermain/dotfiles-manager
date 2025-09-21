@@ -53,16 +53,18 @@ def init_link_command(flags) -> Generator[Symlink]:
 
 def init_copy_command(flags) -> Generator[Copy]:
     gen = []
-    print(flags)
     if flags.only in (None, "home"):
         gen.append(init_sub_command(OUTPUT_DOTFILE_HOME_COPY, OUTPUT_HOME))
     if flags.only in (None, "system"):
         gen.append(init_sub_command(OUTPUT_DOTFILE_SYSTEM_COPY, OUTPUT_SYSTEM))
 
     for src, dest in chain(*gen):
-        yield Copy(src, dest) + FileTemplate(dest)
+        cp = Copy(src, dest)
+        if src.is_dir():
+            cp += FileTemplate(dest)
+        yield cp
 
 
 def init_command(flags) -> Generator[Symlink | Copy]:
-    yield from init_link_command()
-    yield from init_copy_command()
+    yield from init_link_command(flags)
+    yield from init_copy_command(flags)
