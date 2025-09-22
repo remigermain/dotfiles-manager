@@ -12,6 +12,7 @@ from dotfiles_manager.commands.init import (
 from dotfiles_manager.commands.runner import runner
 from dotfiles_manager.commands.symlink import link_command, unlink_command
 from dotfiles_manager.utils.style import style
+from dotfiles_manager.utils.logger import logger
 
 type = argparse.FileType()
 
@@ -23,6 +24,9 @@ def main():
     )
     parser.add_argument(
         "-n", action="store_true", default=False, help="assume no"
+    )
+    parser.add_argument(
+        "-v", const=10, dest="verbose", action="append_const", help="verbose"
     )
     parser.add_argument(
         "-c",
@@ -95,8 +99,15 @@ def main():
     flags = parser.parse_args()
 
     style.config(flags)
+    if flags.verbose:
+        logger.setLevel(50 - sum(flags.verbose))
+    else:
+        logger.setLevel(10000000)
+
+    logger.debug("flags: %s", flags)
 
     try:
+        logger.info("Run command: %s", flags.command)
         if flags.command == "init":
             runner(init_command(flags), flags)
         elif flags.command == "init-link":

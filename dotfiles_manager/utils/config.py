@@ -29,3 +29,5 @@ for out in (
     OUTPUT_DOTFILE_SYSTEM_COPY,
 ):
     out.mkdir(parents=True, exist_ok=True)
+
+DOTFILE_IGNORE_FOLDER = ".dot-folder"

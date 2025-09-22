@@ -3,9 +3,20 @@ import io
 import pathlib
 import subprocess
 import tempfile
+from dotfiles_manager.utils.logger import logger
 
 
 class InterfaceFS(abc.ABC):
+    def __init__(self):
+        self._superuser = False
+
+    def enable_superuser(self):
+        self._superuser = True
+
+    @property
+    def is_superuser(self):
+        return self._superuser
+
     @abc.abstractmethod
     def mkdir(self, path: pathlib.Path): ...
 
@@ -33,23 +44,38 @@ class InterfaceFS(abc.ABC):
     @abc.abstractmethod
     def read(self, path: pathlib.Path): ...
 
+    @abc.abstractmethod
+    def is_dir(self, path: pathlib.Path) -> bool: ...
+
+    @abc.abstractmethod
+    def is_file(self, path: pathlib.Path) -> bool: ...
+
+    @abc.abstractmethod
+    def exists(self, path: pathlib.Path) -> bool: ...
+
+    @abc.abstractmethod
+    def can_read(self, path: pathlib.Path) -> bool: ...
+
+    @abc.abstractmethod
+    def can_write(self, path: pathlib.Path) -> bool: ...
+
+    @abc.abstractmethod
+    def resolve(self, path: pathlib.Path) -> pathlib.Path: ...
+
 
 class Shell(InterfaceFS):
-    def __init__(self):
-        self._root = False
-
-    def active_root(self):
-        self._root = True
-
-    def run(self, cmds, *ar, **kw):
+    def run(self, cmds, check=True, *ar, **kw):
         kw.setdefault("stdout", subprocess.PIPE)
         kw.setdefault("stderr", subprocess.PIPE)
         cmds = list(cmds)
-        if self._root:
+        if self.is_superuser:
             cmds.insert(0, "sudo")
 
+        logger.info("shell Command: %s", cmds)
         result = subprocess.run(cmds, **kw)
-        result.check_returncode()
+        logger.info("Shell Command Result: %s", result.returncode)
+        if check:
+            result.check_returncode()
         return result
 
     def mkdir(self, path: pathlib.Path):
@@ -97,3 +123,38 @@ class Shell(InterfaceFS):
     def read(self, path: pathlib.Path) -> str:
         result = self.run(["cat", str(path)])
         return result.stdout.decode()
+
+    def is_dir(self, path: pathlib.Path) -> bool:
+        result = self.run(["test", "-d", str(path)], check=False)
+        return result.returncode == 0
+
+    def is_file(self, path: pathlib.Path) -> bool:
+        result = self.run(["test", "-f", str(path)], check=False)
+        return result.returncode == 0
+
+    def is_symlink(self, path: pathlib.Path) -> bool:
+        result = self.run(["test", "-L", str(path)], check=False)
+        return result.returncode == 0
+
+    def exists(self, path: pathlib.Path) -> bool:
+        if self.run(["test", "-e", str(path)], check=False).returncode != 0:
+            return False
+        return self.is_file(path)
+
+    def can_read(self, path: pathlib.Path) -> bool:
+        if not self.exists(path):
+            return False
+        result = self.run(["test", "-r", str(path)], check=False)
+        return result.returncode == 0
+
+    def can_write(self, path: pathlib.Path) -> bool:
+        if not self.exists(path):
+            return False
+        result = self.run(["test", "-w", str(path)], check=False)
+        return result.returncode == 0
+
+    def resolve(self, path: pathlib.Path) -> bool:
+        if self.is_symlink(path):
+            result = self.run(["readlink", str(path)], text=True)
+            return pathlib.Path(result.stdout.strip())
+        return path
