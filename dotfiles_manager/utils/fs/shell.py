@@ -62,6 +62,12 @@ class InterfaceFS(abc.ABC):
     @abc.abstractmethod
     def resolve(self, path: pathlib.Path) -> pathlib.Path: ...
 
+    @abc.abstractmethod
+    def chown(self, path: pathlib.Path): ...
+
+    @abc.abstractmethod
+    def chmod(self, path: pathlib.Path, mode: str): ...
+
 
 class Shell(InterfaceFS):
     def run(self, cmds, check=True, *ar, **kw):
@@ -158,3 +164,9 @@ class Shell(InterfaceFS):
             result = self.run(["readlink", str(path)], text=True)
             return pathlib.Path(result.stdout.strip())
         return path
+
+    def chown(self, path: pathlib.Path, user: str):
+        self.run(["chown", user, "-R", str(path)])
+
+    def chmod(self, path: pathlib.Path, mode: str):
+        self.run(["chmod", mode, str(path)])

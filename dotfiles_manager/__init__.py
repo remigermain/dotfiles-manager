@@ -39,6 +39,12 @@ def main():
 
     init = sub.add_parser("init", help="symlink/copy all dotfiles")
     init.add_argument(
+        "--interactive",
+        action="store_true",
+        help="ask confirmation for each action",
+        default=False,
+    )
+    init.add_argument(
         "--only",
         choices=["home", "system"],
         help="link only specified element",
@@ -49,6 +55,12 @@ def main():
 
     init_link = sub.add_parser("init-link", help="symlink all dotfiles")
     init_link.add_argument(
+        "--interactive",
+        action="store_true",
+        help="ask confirmation for each action",
+        default=False,
+    )
+    init_link.add_argument(
         "--only",
         choices=["home", "system"],
         help="link only specified element",
@@ -57,6 +69,12 @@ def main():
     )
 
     init_copy = sub.add_parser("init-copy", help="copy all dotfiles")
+    init_copy.add_argument(
+        "--interactive",
+        action="store_true",
+        help="ask confirmation for each action",
+        default=False,
+    )
     init_copy.add_argument(
         "--only",
         choices=["home", "system"],
@@ -97,6 +115,9 @@ def main():
     )
 
     flags = parser.parse_args()
+    if "interactive" in flags and flags.interactive is True:
+        flags.no = False
+        flags.y = True
 
     style.config(flags)
     if flags.verbose:

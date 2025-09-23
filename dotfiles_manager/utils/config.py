@@ -4,11 +4,11 @@ import sys
 
 OUTPUT_HOME = pathlib.Path("~/").expanduser()
 OUTPUT_SYSTEM = pathlib.Path("/").expanduser()
+WHOAMI = os.getenv("USER")
 
 BASE = OUTPUT_HOME / ".dotfile"
 if not BASE.exists() or not BASE.is_file():
-    whoami = os.getenv("USER")
-    sys.exit(f".dotfile for {whoami!r} file is not defined")
+    sys.exit(f".dotfile for {WHOAMI!r} file is not defined")
 
 BASE_DOTFILE = pathlib.Path(BASE.read_text().strip()).expanduser()
 

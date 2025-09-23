@@ -18,11 +18,11 @@ class Copy(DotfileFS):
 
     def __call__(self, fs: InterfaceFS, flags):
         if fs.is_file(self.src):
-            fs.mkdir(self.src.parent)
+            fs.mkdir(self.dest.parent)
             fs.copyfile(self.src, self.dest)
             print(f"copied file '{style.info(str(self.dest))}'")
         elif fs.is_dir(self.src):
-            fs.mkdir(self.src.parent)
+            fs.mkdir(self.dest.parent)
             fs.copydir(self.src, self.dest)
             print(f"copied directory '{style.info(str(self.dest))}'")
 
@@ -100,3 +100,12 @@ class FileTemplate(File):
             return
         self.content = template_file(content, flags)
         super().__call__(fs, flags)
+
+
+class Chown(DotfileFS):
+    def __init__(self, src: pathlib.Path, user: str):
+        super().__init__(src, src)
+        self.user = user
+
+    def __call__(self, fs: InterfaceFS, flags) -> None:
+        fs.chown(self.src, self.user)
