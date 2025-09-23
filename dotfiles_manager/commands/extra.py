@@ -18,8 +18,8 @@ def run_script(script_name: str, flags):
 
 
 def refresh_command(flags):
-    run_script("refresh.sh")
+    run_script("refresh.sh", flags)
 
 
 def backup_command(flags):
-    run_script("backup.sh")
+    run_script("backup.sh", flags)
