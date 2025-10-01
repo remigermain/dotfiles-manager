@@ -1,10 +1,10 @@
-from dotfiles_manager.utils.fs.base import BaseClass
+from dotfiles_manager.utils.fs.base import DotfileExtra
 from dotfiles_manager.utils.fs.fs import DotfileFS, InterfaceFS
 import sys
 import logging
 
 
-class Message(BaseClass):
+class Message(DotfileExtra):
     def __init__(self, msg, *next: list[DotfileFS], logg_level=logging.INFO):
         super().__init__(*next)
         self.msg = msg

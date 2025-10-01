@@ -1,9 +1,9 @@
-from dotfiles_manager.utils.fs.base import BaseClass
+from dotfiles_manager.utils.fs.base import DotfileExtra
 from dotfiles_manager.utils.fs.shell import InterfaceFS
 import copy
 
 
-class Flags(BaseClass):
+class Flags(DotfileExtra):
     def update(self, flags):
         return copy.deepcopy(flags)
 
@@ -15,6 +15,6 @@ class Flags(BaseClass):
 class ForceYes(Flags):
     def update(self, flags):
         new_flags = super().update(flags)
-        new_flags.y = True
-        new_flags.n = False
+        new_flags.yes = True
+        new_flags.no = False
         return new_flags

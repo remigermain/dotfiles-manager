@@ -4,7 +4,17 @@ from dotfiles_manager.utils.style import style
 import abc
 
 
-class DotfileFS(abc.ABC):
+class DotfileInterface(abc.ABC):
+    @abc.abstractmethod
+    def validate(self, fs: InterfaceFS, flags):
+        raise NotImplemented
+
+    @abc.abstractmethod
+    def __call__(self, fs: InterfaceFS, flags):
+        raise NotImplemented
+
+
+class DotfileFS(DotfileInterface):
     def __init__(self, src, dest):
         self.src = src
         self.dest = dest
@@ -25,12 +35,8 @@ class DotfileFS(abc.ABC):
                 f"Permission denied: '{style.error(str(self.dest))}'"
             )
 
-    @abc.abstractmethod
-    def __call__(self, fs: InterfaceFS, flags):
-        raise NotImplemented
 
-
-class BaseClass:
+class DotfileExtra(DotfileInterface):
     def __init__(self, *next: DotfileFS):
         self.next = next
 

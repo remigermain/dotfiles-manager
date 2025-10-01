@@ -39,12 +39,12 @@ class Symlink(DotfileFS):
                     f"symlink already exists'{style.info(str(self.dest))}', ignore..."
                 )(fs, flags)
                 return
-            if flags.n:
+            if flags.no:
                 Log.Show(f"symlink '{style.info(str(self.dest))}' ignored...")(
                     fs, flags
                 )
                 return
-            if not flags.y:
+            if not flags.yes:
                 if not Log.Ask(
                     f"'{style.info(str(self.dest))}' already exists, remove it ?"
                 )(fs, flags):

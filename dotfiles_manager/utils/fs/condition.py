@@ -2,10 +2,10 @@ import pathlib
 from dotfiles_manager.utils.fs.base import DotfileFS
 from dotfiles_manager.utils.fs.shell import InterfaceFS
 from typing import Callable
-from dotfiles_manager.utils.fs.base import BaseClass
+from dotfiles_manager.utils.fs.base import DotfileExtra
 
 
-class Condition(BaseClass):
+class Condition(DotfileExtra):
     def __init__(
         self,
         condition: bool | Callable,

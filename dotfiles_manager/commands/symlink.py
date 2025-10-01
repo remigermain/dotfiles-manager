@@ -42,4 +42,4 @@ def unlink_command(srcs, flags) -> Generator[DotfileFS]:
                 Condition(not flags.no_remove, Delete(dest)),
             )
             | Log.Error(f"'{style.error(dest)}' not already linked"),
-        )
+        ) | Log.Error(f"'{style.error(src)}' not exists")

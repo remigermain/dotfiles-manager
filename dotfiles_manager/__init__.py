@@ -21,13 +21,13 @@ type = argparse.FileType()
 def main():
     parser = argparse.ArgumentParser("dotfiles manager")
     parser.add_argument(
-        "-y", action="store_true", default=False, help="assume yes"
+        "-y", "--yes", action="store_true", default=False, help="assume yes"
     )
     parser.add_argument(
-        "-n", action="store_true", default=False, help="assume no"
+        "-n", "--no", action="store_true", default=False, help="assume no"
     )
     parser.add_argument(
-        "-v", const=10, dest="verbose", action="append_const", help="verbose"
+        "-v", "--verbose", const=10, dest="verbose", action="append_const", help="verbose"
     )
     parser.add_argument(
         "--sudo",
@@ -125,7 +125,7 @@ def main():
     flags = parser.parse_args()
     if "interactive" in flags and flags.interactive is True:
         flags.no = False
-        flags.y = True
+        flags.yes = True
 
     style.config(flags)
     if flags.verbose:

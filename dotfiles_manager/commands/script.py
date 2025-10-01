@@ -17,9 +17,9 @@ def script_command(script_name: str, flags) -> int:
         sys.exit(f"{script_name} script don't exists")
 
     cmds = [script]
-    if flags.n:
+    if flags.no:
         cmds.append("-n")
-    elif flags.y:
+    elif flags.yes:
         cmds.append("-y")
 
     if flags.sudo:
