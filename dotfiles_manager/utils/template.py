@@ -1,10 +1,9 @@
 import json
 
 import jinja2
-from jinja2 import Undefined
 
 
-class SilentUndefined(Undefined):
+class SilentUndefined(jinja2.Undefined):
     """
     Dont break pageloads because vars arent there!
     """
@@ -24,7 +23,7 @@ def read_file(file: str) -> dict:
 
 
 def template_file(content: str, flags) -> str:
-    # # TODO keyring
+    # TODO keyring
     template = environment.from_string(content)
 
     conf = {}

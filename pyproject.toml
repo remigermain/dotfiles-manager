@@ -3,7 +3,21 @@ name = "manager-dotfiles"
 version = "0.0.3"
 description = "dotfiles manager for link/copy files, and run backup/refresh scripts"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+
+authors = [
+    {"name" = "rgermain", "email" = "contact@germainremi.fr"}
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+urls = { "projects" = "https://github.com/remigermain/manager-dotfiles" }
 
 dependencies = [
     "jinja2>=3.1.6",

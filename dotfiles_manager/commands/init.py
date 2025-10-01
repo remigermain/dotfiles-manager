@@ -11,10 +11,10 @@ from dotfiles_manager.utils.config import (
     OUTPUT_SYSTEM,
     DOTFILE_IGNORE_FOLDER,
 )
-from dotfiles_manager.utils.fs.condition import IsFile
+from dotfiles_manager.utils.fs.condition import IsFile, Condition
 from dotfiles_manager.utils.fs.path import removeprefix
-from dotfiles_manager.utils.fs.fs import Copy, FileTemplate, Symlink
-from dotfiles_manager.utils.format import ask
+from dotfiles_manager.utils.fs.log import Log
+from dotfiles_manager.utils.fs.fs import Copy, Symlink, WriteFileTemplate
 from dotfiles_manager.utils.style import style
 
 
@@ -51,10 +51,11 @@ def init_link_command(flags) -> Generator[Symlink]:
         gen.append(init_sub_command(OUTPUT_DOTFILE_SYSTEM_LINK, OUTPUT_SYSTEM))
 
     for src, dest in chain(*gen):
-        if flags.interactive:
-            if not ask(f"synlink '{style.info(src)}' ?"):
-                continue
-        yield Symlink(src, dest)
+        yield Condition(
+            not flags.interactive or Log.Ask(f"synlink '{style.info(src)}' ?"),
+            Symlink(src, dest),
+            only_one=True,
+        )
 
 
 def init_copy_command(flags) -> Generator[Copy]:
@@ -65,11 +66,12 @@ def init_copy_command(flags) -> Generator[Copy]:
         gen.append(init_sub_command(OUTPUT_DOTFILE_SYSTEM_COPY, OUTPUT_SYSTEM))
 
     for src, dest in chain(*gen):
-        if flags.interactive:
-            if not ask(f"synlink '{style.info(src)}' ?"):
-                continue
-        yield Copy(src, dest)
-        yield IsFile(src, FileTemplate(dest))
+        yield Condition(
+            not flags.interactive or Log.Ask(f"copy '{style.info(src)}' ?"),
+            Copy(src, dest),
+            IsFile(src, WriteFileTemplate(dest)),
+            only_one=True,
+        )
 
 
 def init_command(flags) -> Generator[Symlink | Copy]:

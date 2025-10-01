@@ -7,15 +7,8 @@ from dotfiles_manager.utils.logger import logger
 
 
 class InterfaceFS(abc.ABC):
-    def __init__(self):
-        self._superuser = False
-
-    def enable_superuser(self):
-        self._superuser = True
-
-    @property
-    def is_superuser(self):
-        return self._superuser
+    def __init__(self, sudo=False):
+        self.sudo = sudo
 
     @abc.abstractmethod
     def mkdir(self, path: pathlib.Path): ...
@@ -74,7 +67,7 @@ class Shell(InterfaceFS):
         kw.setdefault("stdout", subprocess.PIPE)
         kw.setdefault("stderr", subprocess.PIPE)
         cmds = list(cmds)
-        if self.is_superuser:
+        if self.sudo:
             cmds.insert(0, "sudo")
 
         logger.info("shell Command: %s", cmds)
@@ -145,7 +138,7 @@ class Shell(InterfaceFS):
     def exists(self, path: pathlib.Path) -> bool:
         if self.run(["test", "-e", str(path)], check=False).returncode != 0:
             return False
-        return self.is_file(path)
+        return self.is_file(path) or self.is_dir(path)
 
     def can_read(self, path: pathlib.Path) -> bool:
         if not self.exists(path):
