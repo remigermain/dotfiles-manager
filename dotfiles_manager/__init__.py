@@ -3,7 +3,7 @@ import argparse
 import sys
 
 from dotfiles_manager.commands.copy import copy_command
-from dotfiles_manager.commands.extra import backup_command, refresh_command
+from dotfiles_manager.commands.script import script_command
 from dotfiles_manager.commands.init import (
     init_command,
     init_copy_command,
@@ -12,6 +12,8 @@ from dotfiles_manager.commands.init import (
 from dotfiles_manager.commands.runner import runner
 from dotfiles_manager.commands.symlink import link_command, unlink_command
 from dotfiles_manager.utils.style import style
+from dotfiles_manager.utils.logger import logger
+from dotfiles_manager.utils.config import MAP_SCRIPTS_UNIQUE, MAP_SCRIPTS
 
 type = argparse.FileType()
 
@@ -19,10 +21,25 @@ type = argparse.FileType()
 def main():
     parser = argparse.ArgumentParser("dotfiles manager")
     parser.add_argument(
-        "-y", action="store_true", default=False, help="assume yes"
+        "-y", "--yes", action="store_true", default=False, help="assume yes"
     )
     parser.add_argument(
-        "-n", action="store_true", default=False, help="assume no"
+        "-n", "--no", action="store_true", default=False, help="assume no"
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        const=10,
+        dest="verbose",
+        action="append_const",
+        help="verbose",
+    )
+    parser.add_argument(
+        "--sudo",
+        dest="sudo",
+        action="store_true",
+        help="run all command in sudo",
+        default=False,
     )
     parser.add_argument(
         "-c",
@@ -35,6 +52,12 @@ def main():
 
     init = sub.add_parser("init", help="symlink/copy all dotfiles")
     init.add_argument(
+        "--interactive",
+        action="store_true",
+        help="ask confirmation for each action",
+        default=False,
+    )
+    init.add_argument(
         "--only",
         choices=["home", "system"],
         help="link only specified element",
@@ -45,6 +68,12 @@ def main():
 
     init_link = sub.add_parser("init-link", help="symlink all dotfiles")
     init_link.add_argument(
+        "--interactive",
+        action="store_true",
+        help="ask confirmation for each action",
+        default=False,
+    )
+    init_link.add_argument(
         "--only",
         choices=["home", "system"],
         help="link only specified element",
@@ -53,6 +82,12 @@ def main():
     )
 
     init_copy = sub.add_parser("init-copy", help="copy all dotfiles")
+    init_copy.add_argument(
+        "--interactive",
+        action="store_true",
+        help="ask confirmation for each action",
+        default=False,
+    )
     init_copy.add_argument(
         "--only",
         choices=["home", "system"],
@@ -81,22 +116,32 @@ def main():
     copy = sub.add_parser("copy", aliases=("cp",), help="copy dotfiles file(s)")
     copy.add_argument("src", help="file/dir to copy", nargs="+")
 
-    sub.add_parser(
-        "backup",
-        aliases=("bc",),
-        help="backup dotfiles, show diff, and push to git",
-    )
-    sub.add_parser(
-        "refresh",
-        aliases=("up", "update", "upgrade"),
-        help="run a refreshs scripts (update packages ..ect)",
-    )
+    run = sub.add_parser("run", help="run script name")
+    run.add_argument("script", help="scripts name", choices=MAP_SCRIPTS_UNIQUE)
+    run.add_argument("*", help="args to pass to scripts", nargs="*")
+
+    # add all script without extentios
+    for name in MAP_SCRIPTS_UNIQUE:
+        script_parser = sub.add_parser(name, help=f"script command {name!r}")
+        script_parser.add_argument(
+            "*", help="args to pass to scripts", nargs="*"
+        )
 
     flags = parser.parse_args()
+    if "interactive" in flags and flags.interactive is True:
+        flags.no = False
+        flags.yes = True
 
     style.config(flags)
+    if flags.verbose:
+        logger.setLevel(50 - sum(flags.verbose))
+    else:
+        logger.setLevel(10000000)
+
+    logger.debug("flags: %s", flags)
 
     try:
+        logger.info("Run command: %s", flags.command)
         if flags.command == "init":
             runner(init_command(flags), flags)
         elif flags.command == "init-link":
@@ -109,10 +154,10 @@ def main():
             runner(unlink_command(flags.src, flags), flags)
         elif flags.command in ("copy", "cp"):
             runner(copy_command(flags.src, flags), flags)
-        elif flags.command in ("backup", "bc"):
-            backup_command(flags)
-        elif flags.command in ("refresh", "up", "upgrade", "update"):
-            refresh_command(flags)
+        elif flags.command == "run":
+            script_command(MAP_SCRIPTS[flags.script], flags)
+        elif flags.command in MAP_SCRIPTS:
+            script_command(MAP_SCRIPTS[flags.command], flags)
         else:
             sys.exit(f"invalid command {flags.command!r}")
     except KeyboardInterrupt:

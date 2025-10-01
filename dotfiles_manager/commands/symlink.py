@@ -4,31 +4,42 @@ from dotfiles_manager.utils.fs.fs import (
     Copy,
     Delete,
     DotfileFS,
-    EnumFile,
-    File,
+    WriteFile,
     Symlink,
-    sanitize_source_path,
+    Chown,
 )
+from dotfiles_manager.utils.fs.condition import Exists, IsDir, Condition
+from dotfiles_manager.utils.fs.path import sanitize_source_path, EnumFile
+from dotfiles_manager.utils.fs.flags import ForceYes
+from dotfiles_manager.utils.config import DOTFILE_IGNORE_FOLDER, WHOAMI
+from dotfiles_manager.utils.style import style
+from dotfiles_manager.utils.fs.log import Log
 
 
 def link_command(srcs, flags) -> Generator[DotfileFS]:
     for src in srcs:
         src, dest = sanitize_source_path(src, EnumFile.LINK)
 
-        cp = Copy(src, dest)
-        # TODO permission
-        if src.is_dir():
-            cp += File(dest / ".dot-folder")
-        cp += Symlink(dest, src, force_yes=True)
-        yield cp
+        yield Exists(
+            src,
+            Copy(src, dest),
+            IsDir(src, WriteFile(dest / DOTFILE_IGNORE_FOLDER)),
+            Chown(dest, WHOAMI),
+            ForceYes(Symlink(dest, src)),
+        ) | Log.Error(f"'{style.error(src)}' not exists")
 
 
 def unlink_command(srcs, flags) -> Generator[DotfileFS]:
     for src in srcs:
         src, dest = sanitize_source_path(src, EnumFile.LINK)
 
-        delete = Delete(src)
-        delete += Copy(dest, src)
-        if not flags.no_remove:
-            delete += Delete(dest)
-        yield delete
+        yield Exists(
+            src,
+            Exists(
+                dest,
+                Delete(src),
+                Copy(dest, src),
+                Condition(not flags.no_remove, Delete(dest)),
+            )
+            | Log.Error(f"'{style.error(dest)}' not already linked"),
+        ) | Log.Error(f"'{style.error(src)}' not exists")

@@ -1,4 +1,4 @@
-from dotfiles_manager.cli import main
+from dotfiles_manager import cli
 
 if __name__ == "__main__":
-    main()
+    cli()
