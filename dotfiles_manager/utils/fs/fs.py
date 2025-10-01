@@ -32,7 +32,7 @@ class Copy(DotfileFS):
 
 class Symlink(DotfileFS):
     def __call__(self, fs: InterfaceFS, flags):
-        if fs.is_file(self.dest):
+        if fs.exists(self.dest):
             # same follow
             if fs.resolve(self.dest) == fs.resolve(self.src):
                 Log.Show(
@@ -46,7 +46,7 @@ class Symlink(DotfileFS):
                 return
             if not flags.yes:
                 if not Log.Ask(
-                    f"'{style.info(str(self.dest))}' already exists, remove it ?"
+                    f"'file {style.info(str(self.dest))}' already exists, remove it ?"
                 )(fs, flags):
                     return
 

@@ -27,7 +27,12 @@ def main():
         "-n", "--no", action="store_true", default=False, help="assume no"
     )
     parser.add_argument(
-        "-v", "--verbose", const=10, dest="verbose", action="append_const", help="verbose"
+        "-v",
+        "--verbose",
+        const=10,
+        dest="verbose",
+        action="append_const",
+        help="verbose",
     )
     parser.add_argument(
         "--sudo",
