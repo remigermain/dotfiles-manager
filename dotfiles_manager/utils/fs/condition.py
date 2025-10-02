@@ -48,7 +48,7 @@ class Condition(DotfileExtra):
 
 class IsDir(Condition):
     def __init__(self, src: pathlib.Path, *next: DotfileFS):
-        def condition(fs):
+        def condition(fs, flags):
             return fs.is_dir(src)
 
         super().__init__(condition, *next)
@@ -56,7 +56,7 @@ class IsDir(Condition):
 
 class IsFile(Condition):
     def __init__(self, src: pathlib.Path, *next: DotfileFS):
-        def condition(fs):
+        def condition(fs, flags):
             return fs.is_file(src)
 
         super().__init__(condition, *next)
@@ -64,7 +64,7 @@ class IsFile(Condition):
 
 class Exists(Condition):
     def __init__(self, src: pathlib.Path, *next: DotfileFS):
-        def condition(fs):
+        def condition(fs, flags):
             return fs.exists(src)
 
         super().__init__(condition, *next)

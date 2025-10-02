@@ -21,11 +21,11 @@ class Copy(DotfileFS):
         if fs.is_file(self.src):
             fs.mkdir(self.dest.parent)
             fs.copyfile(self.src, self.dest)
-            Log.Info(f"delete file '{style.info(str(self.dest))}'")(fs, flags)
+            Log.Info(f"copy file '{style.info(str(self.dest))}'")(fs, flags)
         elif fs.is_dir(self.src):
             fs.mkdir(self.dest.parent)
             fs.copydir(self.src, self.dest)
-            Log.Info(f"delete directory '{style.info(str(self.dest))}'")(
+            Log.Info(f"copy directory '{style.info(str(self.dest))}'")(
                 fs, flags
             )
 

@@ -20,9 +20,7 @@ class DotfileFS(DotfileInterface):
         self.dest = dest
 
     def validate(self, fs: InterfaceFS, flags):
-        if not fs.exists(self.src):
-            raise InvalidDotfile(f"'{style.error(str(self.src))}' not exists")
-        if not any((fs.is_file(self.src), fs.is_dir(self.src))):
+        if fs.exists(self.src) and not any((fs.is_file(self.src), fs.is_dir(self.src))):
             raise InvalidDotfile(
                 f"invalid type of file '{style.error(str(self.src))}'"
             )
